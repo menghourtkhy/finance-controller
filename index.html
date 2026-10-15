@@ -1,4 +1,13 @@
-<!-- PWA Manifest & Offline Service Worker Registration -->
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>MyMoney Pro — Personal Finance & Wealth Manager</title>
+
+  <!-- PWA Manifest & Offline Service Worker Registration -->
   <link rel="manifest" href="manifest.json" />
   <script>
     if ('serviceWorker' in navigator) {
@@ -7,3 +16,2266 @@
       });
     }
   </script>
+
+  <!-- Tailwind CSS -->
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <script>
+    if (window.tailwind) {
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: { 50:'#eef2ff', 100:'#e0e7ff', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca' }
+            }
+          }
+        }
+      };
+    }
+  </script>
+
+  <!-- Chart.js for Interactive Financial Analytics -->
+  <script src="[https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js](https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js)"></script>
+
+  <!-- SheetJS (xlsx) for Local CSV & Excel Import/Export -->
+  <script src="[https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js](https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js)"></script>
+
+  <style>
+    @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      background-color: #020617;
+      color: #f1f5f9;
+      margin: 0;
+    }
+    html:not(.dark) body {
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .print-card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col md:flex-row selection:bg-brand-500 selection:text-white">
+
+  <!-- DESKTOP SIDEBAR -->
+  <aside class="hidden md:flex md:flex-col md:w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shrink-0 no-print">
+    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md">M</div>
+        <div>
+          <h1 class="font-bold text-base leading-none">MyMoney Pro</h1>
+          <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Private Wealth OS v2.0</span>
+        </div>
+      </div>
+    </div>
+
+    <nav id="desktop-nav" class="flex-1 p-3 space-y-1 overflow-y-auto text-sm font-medium"></nav>
+
+    <div class="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+      <div class="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/70 flex items-center justify-between">
+        <span class="text-slate-500 dark:text-slate-400">FX Rate (1 USD)</span>
+        <button onclick="App.openFxModal()" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" id="sidebar-fx-label">4,050 KHR</button>
+      </div>
+      <div class="flex gap-1.5">
+        <button onclick="App.loadDemoData()" class="flex-1 py-1.5 px-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-center font-medium">Demo Data</button>
+        <button onclick="App.switchTab('backup')" class="flex-1 py-1.5 px-2 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-medium">Backup</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT WRAPPER -->
+  <div class="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
+    <!-- TOP HEADER -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 no-print">
+      <div class="flex items-center gap-2">
+        <div class="md:hidden w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">M</div>
+        <div>
+          <h2 id="page-title" class="font-bold text-sm sm:text-base">Dashboard</h2>
+          <p id="reconcile-status" class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <span>● Ledger Reconciled</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+        <!-- Global Month Picker -->
+        <input type="month" id="global-month" onchange="App.setMonth(this.value)"
+          class="text-xs sm:text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+        <!-- Reporting Currency Switcher -->
+        <select id="report-currency" onchange="App.setReportCurrency(this.value)"
+          class="text-xs sm:text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="USD">Report: USD ($)</option>
+          <option value="KHR">Report: KHR (៛)</option>
+        </select>
+
+        <!-- Quick Add Transaction Button -->
+        <button onclick="App.openTxModal()"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition">
+          <span>+ Add</span>
+          <span class="hidden sm:inline">Transaction</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button onclick="App.toggleTheme()" title="Toggle Light/Dark Mode"
+          class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+          <span id="theme-icon">☀️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION / DUE RECURRING BANNER -->
+    <div id="due-banner" class="hidden bg-amber-500/10 border-b border-amber-500/30 text-amber-700 dark:text-amber-300 px-4 py-2 text-xs sm:text-sm flex items-center justify-between no-print"></div>
+
+    <!-- DYNAMIC VIEW CONTAINER -->
+    <main id="app-view" class="flex-1 p-3 sm:p-6 max-w-7xl w-full mx-auto space-y-5">
+      <div style="padding: 24px; text-align: center; color: #94a3b8;">Loading MyMoney Pro Ledger...</div>
+    </main>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 grid grid-cols-6 text-[10px] font-medium no-print"></nav>
+
+  <!-- UNIVERSAL MODAL CONTAINER -->
+  <div id="modal-backdrop" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
+    <div id="modal-content" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden"></div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-20 md:bottom-6 right-4 z-50 hidden px-4 py-2.5 rounded-xl shadow-lg text-xs sm:text-sm font-semibold text-white bg-slate-900 dark:bg-slate-100 dark:text-slate-900 transition-all"></div>
+
+<script>
+const DB_NAME = 'MyMoneyProDB_v2';
+const DB_STORE = 'app_state';
+const STORAGE_KEY = 'mymoney_pro_state_v2';
+
+const DEFAULT_CATEGORIES = [
+  { id: 'cat_salary', name: 'Salary & Payroll', type: 'income', icon: '💼', color: '#10b981' },
+  { id: 'cat_freelance', name: 'Side Business / Bonus', type: 'income', icon: '🚀', color: '#059669' },
+  { id: 'cat_invest_inc', name: 'Interest & Dividends', type: 'income', icon: '📈', color: '#34d399' },
+  { id: 'cat_food', name: 'Food & Dining', type: 'expense', icon: '🍜', color: '#f59e0b' },
+  { id: 'cat_groceries', name: 'Groceries & Market', type: 'expense', icon: '🛒', color: '#84cc16' },
+  { id: 'cat_housing', name: 'Rent & Housing', type: 'expense', icon: '🏠', color: '#6366f1' },
+  { id: 'cat_utilities', name: 'EDC, PPWSA & Internet', type: 'expense', icon: '⚡', color: '#06b6d4' },
+  { id: 'cat_transport', name: 'Fuel, Grab & Transport', type: 'expense', icon: '🛵', color: '#ec4899' },
+  { id: 'cat_shopping', name: 'Shopping & Household', type: 'expense', icon: '🛍️', color: '#8b5cf6' },
+  { id: 'cat_health', name: 'Healthcare & Pharmacy', type: 'expense', icon: '🏥', color: '#ef4444' },
+  { id: 'cat_education', name: 'Courses & Subscriptions', type: 'expense', icon: '🎓', color: '#3b82f6' },
+  { id: 'cat_family', name: 'Family & Personal Care', type: 'expense', icon: '❤️', color: '#f43f5e' },
+  { id: 'cat_adjust', name: 'Reconciliation Adjustment', type: 'both', icon: '⚖️', color: '#64748b' }
+];
+
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'transactions', label: 'Transactions', icon: '🧾' },
+  { id: 'budgets', label: 'Budgets', icon: '🎯' },
+  { id: 'accounts', label: 'Accounts & Net Worth', icon: '🏦' },
+  { id: 'goals', label: 'Savings Goals', icon: '🏆' },
+  { id: 'calendar', label: 'Calendar & Bills', icon: '📅' },
+  { id: 'insights', label: 'Smart Insights', icon: '💡' },
+  { id: 'reports', label: 'Reports', icon: '📈' },
+  { id: 'backup', label: 'Import / Backup', icon: '💾' }
+];
+
+const App = {
+  state: null,
+  activeTab: 'dashboard',
+  charts: {},
+  txFilter: { search: '', accountId: 'ALL', categoryId: 'ALL', type: 'ALL', currency: 'ALL', dateFrom: '', dateTo: '', sort: 'date_desc' },
+  selectedTxIds: new Set(),
+  importStaging: null,
+
+  getFreshState() {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    return {
+      schemaVersion: '2.0',
+      updatedAt: new Date().toISOString(),
+      settings: {
+        reportCurrency: 'USD',
+        fxRateKHR: 4050,
+        fxHistory: [{ date: new Date().toISOString().slice(0, 10), rate: 4050 }],
+        selectedMonth: currentMonth,
+        theme: 'dark',
+        dashboardWidgets: {
+          kpiRow: true,
+          budgetBar: true,
+          chartsRow: true,
+          accountsGoalsRow: true,
+          forecastCard: true,
+          recentTx: true
+        },
+        categoryRules: [
+          { keyword: 'edc', categoryId: 'cat_utilities' },
+          { keyword: 'ppwsa', categoryId: 'cat_utilities' },
+          { keyword: 'grab', categoryId: 'cat_transport' },
+          { keyword: 'passapp', categoryId: 'cat_transport' },
+          { keyword: 'aeon', categoryId: 'cat_groceries' },
+          { keyword: 'lucky', categoryId: 'cat_groceries' },
+          { keyword: 'udemy', categoryId: 'cat_education' },
+          { keyword: 'salary', categoryId: 'cat_salary' }
+        ],
+        importMappings: []
+      },
+      categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+      accounts: [
+        { id: 'acc_aba_usd', name: 'ABA Bank (USD)', type: 'bank', currency: 'USD', openingBalance: 1850, isLiability: false },
+        { id: 'acc_bakong_khr', name: 'Bakong / KHQR (KHR)', type: 'ewallet', currency: 'KHR', openingBalance: 1620000, isLiability: false },
+        { id: 'acc_cash_usd', name: 'Wallet Cash (USD)', type: 'cash', currency: 'USD', openingBalance: 150, isLiability: false },
+        { id: 'acc_save_usd', name: 'High-Yield Savings (USD)', type: 'savings', currency: 'USD', openingBalance: 3200, isLiability: false },
+        { id: 'acc_cc_usd', name: 'Visa Credit Card', type: 'credit', currency: 'USD', openingBalance: -240, creditLimit: 2000, isLiability: true, dueDateDay: 25 }
+      ],
+      transactions: [],
+      templates: [
+        { id: 'tpl_1', description: 'Morning Coffee & Breakfast', categoryId: 'cat_food', amount: 12000, currency: 'KHR', accountId: 'acc_bakong_khr', type: 'expense', paymentMethod: 'KHQR' },
+        { id: 'tpl_2', description: 'EDC Monthly Electricity', categoryId: 'cat_utilities', amount: 45, currency: 'USD', accountId: 'acc_aba_usd', type: 'expense', paymentMethod: 'ABA Mobile' },
+        { id: 'tpl_3', description: 'Fuel Top-Up', categoryId: 'cat_transport', amount: 15, currency: 'USD', accountId: 'acc_aba_usd', type: 'expense', paymentMethod: 'KHQR' }
+      ],
+      budgets: {},
+      budgetTemplates: [],
+      goals: [
+        { id: 'goal_efund', name: '6-Month Emergency Fund', targetAmount: 6000, currentAmount: 3200, currency: 'USD', targetDate: '2027-06-30', linkedAccountId: 'acc_save_usd', monthlyTarget: 300, isEmergencyFund: true, history: [] },
+        { id: 'goal_laptop', name: 'Workstation Upgrade Fund', targetAmount: 1400, currentAmount: 450, currency: 'USD', targetDate: '2027-03-31', linkedAccountId: 'acc_save_usd', monthlyTarget: 150, isEmergencyFund: false, history: [] }
+      ],
+      recurring: [
+        { id: 'rec_salary', description: 'Monthly Net Salary', type: 'income', amount: 1650, currency: 'USD', accountId: 'acc_aba_usd', categoryId: 'cat_salary', frequency: 'monthly', dayOfMonth: 28, nextDueDate: currentMonth + '-28', active: true, autoPost: false, lastGeneratedPeriod: '' },
+        { id: 'rec_rent', description: 'Apartment Rent', type: 'expense', amount: 350, currency: 'USD', accountId: 'acc_aba_usd', categoryId: 'cat_housing', frequency: 'monthly', dayOfMonth: 5, nextDueDate: currentMonth + '-05', active: true, autoPost: false, lastGeneratedPeriod: '' },
+        { id: 'rec_edc', description: 'EDC Electricity Bill', type: 'expense', amount: 185000, currency: 'KHR', accountId: 'acc_bakong_khr', categoryId: 'cat_utilities', frequency: 'monthly', dayOfMonth: 12, nextDueDate: currentMonth + '-12', active: true, autoPost: false, lastGeneratedPeriod: '' },
+        { id: 'rec_ppwsa', description: 'PPWSA Water Supply Bill', type: 'expense', amount: 28000, currency: 'KHR', accountId: 'acc_bakong_khr', categoryId: 'cat_utilities', frequency: 'monthly', dayOfMonth: 14, nextDueDate: currentMonth + '-14', active: true, autoPost: false, lastGeneratedPeriod: '' }
+      ],
+      netWorthSnapshots: []
+    };
+  },
+
+  async init() {
+    try {
+      await this.loadState();
+      if (!this.state || !this.state.transactions) {
+        this.state = this.getFreshState();
+      }
+      if (this.state.transactions.length === 0 && Object.keys(this.state.budgets).length === 0) {
+        this.seedInitialSampleData(false);
+      }
+      this.applyTheme();
+      const gm = document.getElementById('global-month');
+      if (gm) gm.value = this.state.settings.selectedMonth;
+      const rc = document.getElementById('report-currency');
+      if (rc) rc.value = this.state.settings.reportCurrency;
+      this.updateFxLabel();
+      this.processDueRecurringCheck();
+      this.renderNavigation();
+      this.render();
+    } catch (err) {
+      console.error('Initialization error:', err);
+      this.state = this.getFreshState();
+      this.seedInitialSampleData(false);
+      this.renderNavigation();
+      this.render();
+    }
+  },
+
+  async loadState() {
+    try {
+      const localRaw = localStorage.getItem(STORAGE_KEY);
+      if (localRaw) {
+        this.state = JSON.parse(localRaw);
+        return;
+      }
+      const idbData = await this.readIndexedDB();
+      if (idbData) {
+        this.state = idbData;
+        return;
+      }
+    } catch (e) {
+      console.warn('Storage load fallback:', e);
+    }
+    this.state = this.getFreshState();
+  },
+
+  async saveState() {
+    this.state.updatedAt = new Date().toISOString();
+    this.recordNetWorthSnapshot();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+      await this.writeIndexedDB(this.state);
+    } catch (e) {
+      console.error('Save error:', e);
+    }
+  },
+
+  readIndexedDB() {
+    return new Promise((resolve) => {
+      try {
+        if (!window.indexedDB) return resolve(null);
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+        };
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          const tx = db.transaction(DB_STORE, 'readonly');
+          const getReq = tx.objectStore(DB_STORE).get('root');
+          getReq.onsuccess = () => resolve(getReq.result || null);
+          getReq.onerror = () => resolve(null);
+        };
+        req.onerror = () => resolve(null);
+      } catch (_) {
+        resolve(null);
+      }
+    });
+  },
+
+  writeIndexedDB(data) {
+    return new Promise((resolve) => {
+      try {
+        if (!window.indexedDB) return resolve();
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+        };
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          const tx = db.transaction(DB_STORE, 'readwrite');
+          tx.objectStore(DB_STORE).put(data, 'root');
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => resolve();
+        };
+        req.onerror = () => resolve();
+      } catch (_) {
+        resolve();
+      }
+    });
+  },
+
+  convertAmount(amount, fromCurr, toCurr, customRate) {
+    const num = Number(amount) || 0;
+    if (fromCurr === toCurr) return num;
+    const rate = Number(customRate) || this.state.settings.fxRateKHR || 4050;
+    if (fromCurr === 'USD' && toCurr === 'KHR') return Math.round(num * rate);
+    if (fromCurr === 'KHR' && toCurr === 'USD') return +(num / rate).toFixed(2);
+    return num;
+  },
+
+  formatMoney(amount, currency = this.state.settings.reportCurrency) {
+    const val = Number(amount) || 0;
+    if (currency === 'KHR') {
+      return Math.round(val).toLocaleString('en-US') + ' ៛';
+    }
+    const sign = val < 0 ? '-' : '';
+    return sign + '$' + Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  },
+
+  txInReportCurrency(tx, targetCurr = this.state.settings.reportCurrency) {
+    return this.convertAmount(tx.amount, tx.currency, targetCurr, tx.fxRateUsed || this.state.settings.fxRateKHR);
+  },
+
+  getAccountBalance(accountId, upToDate = null) {
+    const acc = this.state.accounts.find(a => a.id === accountId);
+    if (!acc) return 0;
+    let bal = Number(acc.openingBalance) || 0;
+    for (const tx of this.state.transactions) {
+      if (upToDate && tx.date > upToDate) continue;
+      const rate = tx.fxRateUsed || this.state.settings.fxRateKHR;
+      if (tx.accountId === accountId) {
+        const amtInAcc = this.convertAmount(tx.amount, tx.currency, acc.currency, rate);
+        if (tx.type === 'income' || tx.type === 'refund') bal += amtInAcc;
+        else if (tx.type === 'expense') bal -= amtInAcc;
+        else if (tx.type === 'transfer') bal -= amtInAcc;
+      }
+      if (tx.type === 'transfer' && tx.toAccountId === accountId) {
+        const recvAmt = tx.toAmount ? Number(tx.toAmount) : this.convertAmount(tx.amount, tx.currency, acc.currency, rate);
+        bal += recvAmt;
+      }
+    }
+    return acc.currency === 'KHR' ? Math.round(bal) : +bal.toFixed(2);
+  },
+
+  getNetWorthSummary(targetCurr = this.state.settings.reportCurrency) {
+    let assets = 0;
+    let liabilities = 0;
+    for (const acc of this.state.accounts) {
+      const bal = this.getAccountBalance(acc.id);
+      const converted = this.convertAmount(bal, acc.currency, targetCurr, this.state.settings.fxRateKHR);
+      if (acc.isLiability || bal < 0) {
+        liabilities += Math.abs(converted);
+      } else {
+        assets += converted;
+      }
+    }
+    return { assets, liabilities, netWorth: assets - liabilities };
+  },
+
+  recordNetWorthSnapshot() {
+    const month = this.state.settings.selectedMonth;
+    const nwUSD = this.getNetWorthSummary('USD');
+    const idx = this.state.netWorthSnapshots.findIndex(s => s.month === month);
+    const entry = { month, assetsUSD: nwUSD.assets, liabilitiesUSD: nwUSD.liabilities, netWorthUSD: nwUSD.netWorth };
+    if (idx >= 0) this.state.netWorthSnapshots[idx] = entry;
+    else this.state.netWorthSnapshots.push(entry);
+    this.state.netWorthSnapshots.sort((a, b) => a.month.localeCompare(b.month));
+  },
+
+  getPeriodMetrics(monthOrRange, targetCurr = this.state.settings.reportCurrency, filterOpts = {}) {
+    let income = 0;
+    let grossExpense = 0;
+    let refunds = 0;
+    let transfersVolume = 0;
+    const byCategory = {};
+
+    const txs = this.state.transactions.filter(tx => {
+      if (typeof monthOrRange === 'string') {
+        if (!tx.date.startsWith(monthOrRange)) return false;
+      } else if (monthOrRange && monthOrRange.from && monthOrRange.to) {
+        if (tx.date < monthOrRange.from || tx.date > monthOrRange.to) return false;
+      }
+      if (filterOpts.accountId && filterOpts.accountId !== 'ALL' && tx.accountId !== filterOpts.accountId && tx.toAccountId !== filterOpts.accountId) return false;
+      if (filterOpts.currency && filterOpts.currency !== 'ALL' && tx.currency !== filterOpts.currency) return false;
+      return true;
+    });
+
+    for (const tx of txs) {
+      const val = this.txInReportCurrency(tx, targetCurr);
+      if (tx.type === 'transfer') {
+        transfersVolume += val;
+        continue;
+      }
+      if (tx.type === 'income') {
+        if (tx.splits && tx.splits.length > 0) {
+          tx.splits.forEach(s => {
+            const sVal = this.convertAmount(s.amount, tx.currency, targetCurr, tx.fxRateUsed);
+            income += sVal;
+            byCategory[s.categoryId] = (byCategory[s.categoryId] || 0) + sVal;
+          });
+        } else {
+          income += val;
+          byCategory[tx.categoryId] = (byCategory[tx.categoryId] || 0) + val;
+        }
+      } else if (tx.type === 'expense') {
+        if (tx.splits && tx.splits.length > 0) {
+          tx.splits.forEach(s => {
+            const sVal = this.convertAmount(s.amount, tx.currency, targetCurr, tx.fxRateUsed);
+            grossExpense += sVal;
+            byCategory[s.categoryId] = (byCategory[s.categoryId] || 0) + sVal;
+          });
+        } else {
+          grossExpense += val;
+          byCategory[tx.categoryId] = (byCategory[tx.categoryId] || 0) + val;
+        }
+      } else if (tx.type === 'refund') {
+        refunds += val;
+        byCategory[tx.categoryId] = (byCategory[tx.categoryId] || 0) - val;
+      }
+    }
+
+    const netExpense = Math.max(0, grossExpense - refunds);
+    return {
+      income,
+      grossExpense,
+      refunds,
+      netExpense,
+      netCashFlow: income - netExpense,
+      transfersVolume,
+      byCategory,
+      txCount: txs.length
+    };
+  },
+
+  getBudgetForMonth(month, targetCurr = this.state.settings.reportCurrency) {
+    if (!this.state.budgets[month]) {
+      this.state.budgets[month] = {
+        overallUSD: 1100,
+        savingsTargetUSD: 350,
+        rolloverEnabled: false,
+        categories: {
+          cat_food: 180,
+          cat_groceries: 150,
+          cat_housing: 350,
+          cat_utilities: 90,
+          cat_transport: 75,
+          cat_shopping: 100,
+          cat_health: 50,
+          cat_education: 55,
+          cat_family: 50
+        }
+      };
+    }
+    const raw = this.state.budgets[month];
+    const metrics = this.getPeriodMetrics(month, targetCurr);
+    const prevMonth = this.getPreviousMonthStr(month);
+    const prevRaw = this.state.budgets[prevMonth];
+    const prevMetrics = prevRaw ? this.getPeriodMetrics(prevMonth, targetCurr) : null;
+
+    const categoryRows = this.state.categories
+      .filter(c => c.type === 'expense')
+      .map(cat => {
+        const baseUSD = Number(raw.categories[cat.id] || 0);
+        const basePlanned = this.convertAmount(baseUSD, 'USD', targetCurr, this.state.settings.fxRateKHR);
+        let rolloverAmt = 0;
+        if (raw.rolloverEnabled && prevRaw) {
+          const prevPlanned = this.convertAmount(Number(prevRaw.categories[cat.id] || 0), 'USD', targetCurr, this.state.settings.fxRateKHR);
+          const prevActual = Math.max(0, prevMetrics.byCategory[cat.id] || 0);
+          rolloverAmt = prevPlanned - prevActual;
+        }
+        const effectivePlanned = Math.max(0, basePlanned + rolloverAmt);
+        const actual = Math.max(0, metrics.byCategory[cat.id] || 0);
+        const remaining = effectivePlanned - actual;
+        const pct = effectivePlanned > 0 ? (actual / effectivePlanned) * 100 : (actual > 0 ? 100 : 0);
+        return { category: cat, baseUSD, basePlanned, rolloverAmt, effectivePlanned, actual, remaining, pct };
+      });
+
+    const sumCatPlanned = categoryRows.reduce((s, r) => s + r.effectivePlanned, 0);
+    const overallPlanned = Math.max(
+      this.convertAmount(raw.overallUSD || 0, 'USD', targetCurr, this.state.settings.fxRateKHR),
+      sumCatPlanned
+    );
+    const savingsTarget = this.convertAmount(raw.savingsTargetUSD || 0, 'USD', targetCurr, this.state.settings.fxRateKHR);
+
+    const today = new Date();
+    const currentYM = today.toISOString().slice(0, 7);
+    const [y, m] = month.split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    let daysElapsed = daysInMonth;
+    if (month === currentYM) daysElapsed = Math.max(1, today.getDate());
+    else if (month > currentYM) daysElapsed = 1;
+
+    const timeElapsedPct = (daysElapsed / daysInMonth) * 100;
+    const dailyBurnRate = metrics.netExpense / daysElapsed;
+    const unpaidUpcomingBills = this.getUpcomingBillsForMonth(month, targetCurr)
+      .filter(b => !b.isPaid && b.type === 'expense')
+      .reduce((s, b) => s + b.amountInReportCurr, 0);
+
+    const forecastedMonthEnd = month === currentYM
+      ? Math.max(metrics.netExpense + unpaidUpcomingBills, dailyBurnRate * daysInMonth)
+      : metrics.netExpense;
+
+    return {
+      month, raw, overallPlanned, savingsTarget,
+      actualExpense: metrics.netExpense,
+      actualIncome: metrics.income,
+      remainingBudget: overallPlanned - metrics.netExpense,
+      usagePct: overallPlanned > 0 ? (metrics.netExpense / overallPlanned) * 100 : 0,
+      timeElapsedPct, daysElapsed, daysInMonth, dailyBurnRate, unpaidUpcomingBills, forecastedMonthEnd, categoryRows
+    };
+  },
+
+  getPreviousMonthStr(ym) {
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(y, m - 2, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  },
+
+  getUpcomingBillsForMonth(month, targetCurr = this.state.settings.reportCurrency) {
+    return this.state.recurring.filter(r => r.active).map(r => {
+      const dueDay = String(r.dayOfMonth || 1).padStart(2, '0');
+      const dueDate = `${month}-${dueDay}`;
+      const alreadyPosted = this.state.transactions.some(
+        t => (t.recurringId === r.id && t.date.startsWith(month)) ||
+             (t.date.startsWith(month) && t.description.toLowerCase() === r.description.toLowerCase() && Math.abs(t.amount - r.amount) < 0.01)
+      );
+      const todayStr = new Date().toISOString().slice(0, 10);
+      return {
+        ...r,
+        dueDate,
+        isPaid: alreadyPosted || r.lastGeneratedPeriod === month,
+        isOverdue: !alreadyPosted && dueDate < todayStr && month <= todayStr.slice(0, 7),
+        amountInReportCurr: this.convertAmount(r.amount, r.currency, targetCurr, this.state.settings.fxRateKHR)
+      };
+    }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  },
+
+  seedInitialSampleData(notify = true) {
+    const m = this.state.settings.selectedMonth;
+    const prevM = this.getPreviousMonthStr(m);
+    const fx = this.state.settings.fxRateKHR;
+
+    this.state.transactions = [
+      { id: 'tx_s1', date: `${prevM}-01`, type: 'income', description: 'Monthly Salary Payroll', amount: 1650, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_salary', paymentMethod: 'Bank Transfer', tags: ['payroll'], notes: 'Base monthly salary', history: [] },
+      { id: 'tx_s2', date: `${prevM}-05`, type: 'expense', description: 'Apartment Rent', amount: 350, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_housing', paymentMethod: 'ABA Transfer', tags: ['fixed'], notes: '', history: [] },
+      { id: 'tx_s3', date: `${prevM}-10`, type: 'expense', description: 'Grocery Run at Aeon Supermarket', amount: 115, currency: 'USD', fxRateUsed: fx, accountId: 'acc_cc_usd', categoryId: 'cat_groceries', paymentMethod: 'Visa Card', tags: ['groceries'], notes: '', history: [] },
+      { id: 'tx_s4', date: `${prevM}-14`, type: 'expense', description: 'EDC & PPWSA Utility Bills', amount: 210000, currency: 'KHR', fxRateUsed: fx, accountId: 'acc_bakong_khr', categoryId: 'cat_utilities', paymentMethod: 'KHQR', tags: ['bills'], notes: '', history: [] },
+      { id: 'tx_s5', date: `${prevM}-18`, type: 'expense', description: 'Restaurants & Lunches', amount: 380000, currency: 'KHR', fxRateUsed: fx, accountId: 'acc_bakong_khr', categoryId: 'cat_food', paymentMethod: 'KHQR', tags: ['dining'], notes: '', history: [] },
+
+      { id: 'tx_1', date: `${m}-01`, type: 'income', description: 'Monthly Salary Payroll', amount: 1650, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_salary', paymentMethod: 'Bank Transfer', tags: ['payroll'], notes: 'Monthly payroll', history: [] },
+      { id: 'tx_2', date: `${m}-03`, type: 'income', description: 'HR & Automation Consulting Project', amount: 250, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_freelance', paymentMethod: 'ABA Pay', tags: ['side-income'], notes: '', history: [] },
+      { id: 'tx_3', date: `${m}-05`, type: 'expense', description: 'Apartment Rent', amount: 350, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_housing', paymentMethod: 'ABA Transfer', tags: ['rent', 'fixed'], notes: 'Paid on time', recurringId: 'rec_rent', history: [] },
+      { id: 'tx_4', date: `${m}-07`, type: 'expense', description: 'Aeon Mall Split Receipt (Groceries + Household)', amount: 96, currency: 'USD', fxRateUsed: fx, accountId: 'acc_cc_usd', categoryId: 'cat_groceries', paymentMethod: 'Visa Card', tags: ['split', 'aeon'], notes: 'Split between groceries and household items',
+        splits: [
+          { categoryId: 'cat_groceries', amount: 64, note: 'Fresh food & staples' },
+          { categoryId: 'cat_shopping', amount: 32, note: 'Kitchen supplies' }
+        ], history: []
+      },
+      { id: 'tx_5', date: `${m}-09`, type: 'expense', description: 'Daily Lunches & Coffee (Week 1-2)', amount: 460000, currency: 'KHR', fxRateUsed: fx, accountId: 'acc_bakong_khr', categoryId: 'cat_food', paymentMethod: 'KHQR', tags: ['dining'], notes: '', history: [] },
+      { id: 'tx_6', date: `${m}-11`, type: 'expense', description: 'Grab & Fuel Top-Ups', amount: 145000, currency: 'KHR', fxRateUsed: fx, accountId: 'acc_bakong_khr', categoryId: 'cat_transport', paymentMethod: 'KHQR', tags: ['commute'], notes: '', history: [] },
+      { id: 'tx_7', date: `${m}-12`, type: 'expense', description: 'Online Course Bundle (Udemy)', amount: 39.99, currency: 'USD', fxRateUsed: fx, accountId: 'acc_cc_usd', categoryId: 'cat_education', paymentMethod: 'Visa Card', tags: ['upskilling'], notes: '', history: [] },
+      { id: 'tx_8', date: `${m}-13`, type: 'refund', description: 'Course Partial Discount Refund', amount: 10.00, currency: 'USD', fxRateUsed: fx, accountId: 'acc_cc_usd', categoryId: 'cat_education', paymentMethod: 'Visa Card', tags: ['refund'], notes: 'Offsets education expense without inflating income', history: [] },
+      { id: 'tx_9', date: `${m}-14`, type: 'transfer', description: 'Monthly Emergency Fund Contribution', amount: 300, toAmount: 300, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', toAccountId: 'acc_save_usd', categoryId: 'cat_adjust', paymentMethod: 'Internal Transfer', tags: ['savings'], notes: 'Excluded from expenses', history: [] },
+      { id: 'tx_10', date: `${m}-15`, type: 'transfer', description: 'Credit Card Bill Paydown', amount: 150, toAmount: 150, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', toAccountId: 'acc_cc_usd', categoryId: 'cat_adjust', paymentMethod: 'ABA Transfer', tags: ['cc-payment'], notes: 'Reduces liability without double-counting expenses', history: [] }
+    ];
+
+    this.getBudgetForMonth(prevM);
+    this.getBudgetForMonth(m);
+    this.saveState();
+    if (notify) {
+      this.toast('Sample USD & KHR financial ledger loaded');
+      this.render();
+    }
+  },
+
+  loadDemoData() {
+    if (confirm('Reset and load fresh sample USD/KHR transactions, budgets, and accounts?')) {
+      this.state = this.getFreshState();
+      this.seedInitialSampleData(true);
+    }
+  },
+
+  renderNavigation() {
+    const dNav = document.getElementById('desktop-nav');
+    if (dNav) {
+      dNav.innerHTML = NAV_ITEMS.map(item => {
+        const active = this.activeTab === item.id;
+        return `<button onclick="App.switchTab('${item.id}')"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${active ? 'bg-indigo-600 text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}">
+          <span class="text-base">${item.icon}</span>
+          <span>${item.label}</span>
+        </button>`;
+      }).join('');
+    }
+
+    const mobileItems = [NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[2], NAV_ITEMS[3], NAV_ITEMS[6], NAV_ITEMS[7]];
+    const mNav = document.getElementById('mobile-nav');
+    if (mNav) {
+      mNav.innerHTML = mobileItems.map(item => {
+        const active = this.activeTab === item.id;
+        return `<button onclick="App.switchTab('${item.id}')"
+          class="flex flex-col items-center justify-center py-2 px-1 ${active ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 dark:text-slate-400'}">
+          <span class="text-base leading-none mb-1">${item.icon}</span>
+          <span class="truncate max-w-full">${item.label.split(' ')[0]}</span>
+        </button>`;
+      }).join('');
+    }
+  },
+
+  switchTab(tabId) {
+    this.activeTab = tabId;
+    const item = NAV_ITEMS.find(n => n.id === tabId);
+    if (item) document.getElementById('page-title').textContent = item.label;
+    this.renderNavigation();
+    this.render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  setMonth(ym) {
+    if (!ym) return;
+    this.state.settings.selectedMonth = ym;
+    this.saveState();
+    this.render();
+  },
+
+  setReportCurrency(curr) {
+    this.state.settings.reportCurrency = curr;
+    this.saveState();
+    this.render();
+  },
+
+  toggleTheme() {
+    this.state.settings.theme = this.state.settings.theme === 'dark' ? 'light' : 'dark';
+    this.applyTheme();
+    this.saveState();
+    this.render();
+  },
+
+  applyTheme() {
+    const html = document.documentElement;
+    const icon = document.getElementById('theme-icon');
+    if (this.state.settings.theme === 'dark') {
+      html.classList.add('dark');
+      if (icon) icon.textContent = '☀️';
+    } else {
+      html.classList.remove('dark');
+      if (icon) icon.textContent = '🌙';
+    }
+  },
+
+  updateFxLabel() {
+    const el = document.getElementById('sidebar-fx-label');
+    if (el) el.textContent = `${Number(this.state.settings.fxRateKHR).toLocaleString()} KHR`;
+  },
+
+  toast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.remove('hidden');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => t.classList.add('hidden'), 3200);
+  },
+
+  openModal(html) {
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('modal-backdrop').classList.remove('hidden');
+  },
+
+  closeModal() {
+    document.getElementById('modal-backdrop').classList.add('hidden');
+    document.getElementById('modal-content').innerHTML = '';
+  },
+
+  processDueRecurringCheck() {
+    const month = this.state.settings.selectedMonth;
+    const bills = this.getUpcomingBillsForMonth(month);
+    const dueOrOverdue = bills.filter(b => !b.isPaid);
+    const banner = document.getElementById('due-banner');
+    if (!banner) return;
+    if (dueOrOverdue.length > 0) {
+      banner.classList.remove('hidden');
+      banner.innerHTML = `
+        <span>🔔 <strong>${dueOrOverdue.length} scheduled item(s)</strong> pending for ${month} (${dueOrOverdue.map(d => d.description).slice(0, 2).join(', ')}).</span>
+        <button onclick="App.switchTab('calendar')" class="underline font-bold ml-2 shrink-0">Review & Post →</button>
+      `;
+    } else {
+      banner.classList.add('hidden');
+    }
+  },
+
+  destroyCharts() {
+    Object.values(this.charts).forEach(ch => {
+      if (ch && typeof ch.destroy === 'function') ch.destroy();
+    });
+    this.charts = {};
+  },
+
+  render() {
+    this.destroyCharts();
+    this.processDueRecurringCheck();
+    const container = document.getElementById('app-view');
+    if (!container) return;
+    switch (this.activeTab) {
+      case 'dashboard': this.renderDashboard(container); break;
+      case 'transactions': this.renderTransactions(container); break;
+      case 'budgets': this.renderBudgets(container); break;
+      case 'accounts': this.renderAccounts(container); break;
+      case 'goals': this.renderGoals(container); break;
+      case 'calendar': this.renderCalendar(container); break;
+      case 'insights': this.renderInsights(container); break;
+      case 'reports': this.renderReports(container); break;
+      case 'backup': this.renderBackup(container); break;
+      default: this.renderDashboard(container);
+    }
+  },
+
+  renderDashboard(el) {
+    const month = this.state.settings.selectedMonth;
+    const curr = this.state.settings.reportCurrency;
+    const metrics = this.getPeriodMetrics(month, curr);
+    const budget = this.getBudgetForMonth(month, curr);
+    const nw = this.getNetWorthSummary(curr);
+    const w = this.state.settings.dashboardWidgets;
+    const savingsRate = metrics.income > 0 ? Math.max(0, ((metrics.income - metrics.netExpense) / metrics.income) * 100) : 0;
+
+    el.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div class="flex items-center gap-2 text-xs">
+          <span class="px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 font-semibold">Period: ${month}</span>
+          <button onclick="App.openFxModal()" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium">
+            FX: 1 USD = ${this.state.settings.fxRateKHR.toLocaleString()} ៛
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <button onclick="App.switchTab('calendar')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-medium">📅 Bills</button>
+          <button onclick="App.switchTab('backup')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-medium">💾 Import/Backup</button>
+          <button onclick="App.openWidgetCustomizer()" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-medium">⚙️ Widgets</button>
+        </div>
+      </div>
+
+      ${w.kpiRow ? `
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div onclick="App.drilldownTransactions({type:'income'})" class="cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 transition">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>Total Income (${month})</span>
+            <span class="text-emerald-500 font-bold">↑ IN</span>
+          </div>
+          <div class="text-lg sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">${this.formatMoney(metrics.income, curr)}</div>
+          <div class="text-[11px] text-slate-400 mt-1">Excludes internal transfers</div>
+        </div>
+
+        <div onclick="App.drilldownTransactions({type:'expense'})" class="cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-rose-500/50 transition">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>Net Expenses (${month})</span>
+            <span class="text-rose-500 font-bold">↓ OUT</span>
+          </div>
+          <div class="text-lg sm:text-2xl font-bold text-rose-600 dark:text-rose-400">${this.formatMoney(metrics.netExpense, curr)}</div>
+          <div class="text-[11px] text-slate-400 mt-1">${metrics.refunds > 0 ? `Net of ${this.formatMoney(metrics.refunds, curr)} refunds` : 'Tap to drill down'}</div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>Net Cash Flow</span>
+            <span class="font-semibold text-indigo-500">${savingsRate.toFixed(1)}% saved</span>
+          </div>
+          <div class="text-lg sm:text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+            ${metrics.netCashFlow >= 0 ? '+' : ''}${this.formatMoney(metrics.netCashFlow, curr)}
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1">Target Savings: ${this.formatMoney(budget.savingsTarget, curr)}</div>
+        </div>
+
+        <div onclick="App.switchTab('accounts')" class="cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <span>Total Net Worth</span>
+            <span class="text-indigo-500 font-semibold">Assets - Debt</span>
+          </div>
+          <div class="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">${this.formatMoney(nw.netWorth, curr)}</div>
+          <div class="text-[11px] text-slate-400 mt-1">Assets: ${this.formatMoney(nw.assets, curr)} | Debt: ${this.formatMoney(nw.liabilities, curr)}</div>
+        </div>
+      </div>` : ''}
+
+      ${w.budgetBar ? `
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div>
+              <h3 class="font-bold text-sm">Monthly Master Budget Usage</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                Spent <strong>${this.formatMoney(budget.actualExpense, curr)}</strong> of <strong>${this.formatMoney(budget.overallPlanned, curr)}</strong>
+                (${budget.usagePct.toFixed(1)}% used vs ${budget.timeElapsedPct.toFixed(0)}% of month elapsed)
+              </p>
+            </div>
+            <button onclick="App.switchTab('budgets')" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Manage Budget →</button>
+          </div>
+          <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden my-2">
+            <div class="h-full rounded-full transition-all ${budget.usagePct > 100 ? 'bg-rose-500' : budget.usagePct > 80 ? 'bg-amber-500' : 'bg-emerald-500'}"
+                 style="width: ${Math.min(100, budget.usagePct)}%"></div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>Remaining Budget: <strong class="${budget.remainingBudget >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${this.formatMoney(budget.remainingBudget, curr)}</strong></span>
+            <span>Daily Burn: <strong>${this.formatMoney(budget.dailyBurnRate, curr)}/day</strong></span>
+          </div>
+        </div>
+
+        ${w.forecastCard ? `
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+              <span>Month-End Spending Forecast</span>
+              <span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-semibold">${budget.forecastedMonthEnd <= budget.overallPlanned ? 'On Track' : 'Over Pace'}</span>
+            </div>
+            <div class="text-xl font-bold mt-1 ${budget.forecastedMonthEnd <= budget.overallPlanned ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}">
+              ${this.formatMoney(budget.forecastedMonthEnd, curr)}
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+            Includes <strong>${this.formatMoney(budget.unpaidUpcomingBills, curr)}</strong> in unpaid scheduled bills for ${month}.
+          </p>
+        </div>` : ''}
+      </div>` : ''}
+
+      ${w.chartsRow ? `
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm">Category Spending Breakdown (${month})</h3>
+            <span class="text-xs text-slate-400">Tap category below to inspect</span>
+          </div>
+          <div class="h-56 flex items-center justify-center">
+            <canvas id="chart-dash-cat"></canvas>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-1.5 text-xs">
+            ${budget.categoryRows.filter(r => r.actual > 0).sort((a,b) => b.actual - a.actual).slice(0, 6).map(r => `
+              <button onclick="App.drilldownTransactions({categoryId:'${r.category.id}'})"
+                class="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-left">
+                <span class="truncate">${r.category.icon} ${r.category.name}</span>
+                <span class="font-semibold ml-1">${this.formatMoney(r.actual, curr)}</span>
+              </button>
+            `).join('') || '<p class="col-span-2 text-center text-slate-400 py-2">No expenses recorded in this period.</p>'}
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm">6-Month Income vs. Net Expenses</h3>
+            <button onclick="App.switchTab('reports')" class="text-xs text-indigo-500 hover:underline">Full Reports →</button>
+          </div>
+          <div class="h-64">
+            <canvas id="chart-dash-trend"></canvas>
+          </div>
+        </div>
+      </div>` : ''}
+
+      ${w.accountsGoalsRow ? `
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm">Account Balances</h3>
+            <button onclick="App.switchTab('accounts')" class="text-xs text-indigo-500 hover:underline">Reconcile →</button>
+          </div>
+          <div class="space-y-2.5 text-xs sm:text-sm">
+            ${this.state.accounts.map(acc => {
+              const bal = this.getAccountBalance(acc.id);
+              return `
+                <div onclick="App.drilldownTransactions({accountId:'${acc.id}'})" class="cursor-pointer flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800">
+                  <div>
+                    <div class="font-semibold">${acc.name}</div>
+                    <div class="text-[11px] text-slate-400 uppercase">${acc.type} • ${acc.currency}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold ${bal < 0 ? 'text-rose-500' : 'text-slate-900 dark:text-white'}">${this.formatMoney(bal, acc.currency)}</div>
+                    ${acc.currency !== curr ? `<div class="text-[10px] text-slate-400">≈ ${this.formatMoney(this.convertAmount(bal, acc.currency, curr), curr)}</div>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm">Savings Goals</h3>
+            <button onclick="App.switchTab('goals')" class="text-xs text-indigo-500 hover:underline">Manage →</button>
+          </div>
+          <div class="space-y-3 text-xs">
+            ${this.state.goals.map(g => {
+              const pct = g.targetAmount > 0 ? Math.min(100, (g.currentAmount / g.targetAmount) * 100) : 0;
+              return `
+                <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                  <div class="flex justify-between font-semibold mb-1">
+                    <span>${g.isEmergencyFund ? '🛡️ ' : '🎯 '}${g.name}</span>
+                    <span>${pct.toFixed(0)}%</span>
+                  </div>
+                  <div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-1">
+                    <div class="h-full bg-indigo-500 rounded-full" style="width:${pct}%"></div>
+                  </div>
+                  <div class="flex justify-between text-[11px] text-slate-400">
+                    <span>${this.formatMoney(g.currentAmount, g.currency)} / ${this.formatMoney(g.targetAmount, g.currency)}</span>
+                    <span>Target: ${g.targetDate}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-sm">Scheduled Bills (${month})</h3>
+            <button onclick="App.switchTab('calendar')" class="text-xs text-indigo-500 hover:underline">Calendar →</button>
+          </div>
+          <div class="space-y-2 text-xs">
+            ${this.getUpcomingBillsForMonth(month, curr).map(b => `
+              <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                <div>
+                  <div class="font-semibold flex items-center gap-1.5">
+                    <span>${b.description}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[10px] ${b.isPaid ? 'bg-emerald-500/20 text-emerald-500' : b.isOverdue ? 'bg-rose-500/20 text-rose-500' : 'bg-amber-500/20 text-amber-500'}">
+                      ${b.isPaid ? 'Paid' : b.isOverdue ? 'Overdue' : 'Due ' + b.dueDate.slice(8)}
+                    </span>
+                  </div>
+                  <div class="text-[11px] text-slate-400">${b.dueDate} • ${this.formatMoney(b.amount, b.currency)}</div>
+                </div>
+                ${!b.isPaid ? `<button onclick="App.postRecurringItem('${b.id}', '${month}')" class="px-2 py-1 rounded-lg bg-indigo-600 text-white font-semibold text-[11px]">Post</button>` : '<span class="text-emerald-500 font-bold">✓</span>'}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>` : ''}
+
+      ${w.recentTx ? `
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm">Recent Transactions (${month})</h3>
+          <button onclick="App.switchTab('transactions')" class="text-xs text-indigo-500 hover:underline">View All & Filter →</button>
+        </div>
+        ${this.renderTxListSnippet(this.state.transactions.filter(t => t.date.startsWith(month)).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 7))}
+      </div>` : ''}
+    `;
+
+    this.initDashboardCharts(month, curr, budget);
+  },
+
+  initDashboardCharts(month, curr, budget) {
+    if (typeof Chart === 'undefined') return;
+    const catCanvas = document.getElementById('chart-dash-cat');
+    if (catCanvas) {
+      const activeCats = budget.categoryRows.filter(r => r.actual > 0).sort((a, b) => b.actual - a.actual);
+      this.charts.dashCat = new Chart(catCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: activeCats.length ? activeCats.map(r => r.category.name) : ['No Expenses'],
+          datasets: [{
+            data: activeCats.length ? activeCats.map(r => +r.actual.toFixed(2)) : [1],
+            backgroundColor: activeCats.length ? activeCats.map(r => r.category.color) : ['#334155'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 }, color: '#94a3b8' } } }
+        }
+      });
+    }
+
+    const trendCanvas = document.getElementById('chart-dash-trend');
+    if (trendCanvas) {
+      const months = [];
+      let ptr = month;
+      for (let i = 0; i < 6; i++) {
+        months.unshift(ptr);
+        ptr = this.getPreviousMonthStr(ptr);
+      }
+      const incData = months.map(m => +this.getPeriodMetrics(m, curr).income.toFixed(2));
+      const expData = months.map(m => +this.getPeriodMetrics(m, curr).netExpense.toFixed(2));
+      this.charts.dashTrend = new Chart(trendCanvas, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [
+            { label: `Income (${curr})`, data: incData, backgroundColor: '#10b981', borderRadius: 6 },
+            { label: `Net Expenses (${curr})`, data: expData, backgroundColor: '#f43f5e', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8', font: { size: 11 } } }
+          },
+          plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } }
+        }
+      });
+    }
+  },
+
+  drilldownTransactions(filters) {
+    this.txFilter = { search: '', accountId: 'ALL', categoryId: 'ALL', type: 'ALL', currency: 'ALL', dateFrom: '', dateTo: '', sort: 'date_desc', ...filters };
+    this.switchTab('transactions');
+  },
+
+  openWidgetCustomizer() {
+    const w = this.state.settings.dashboardWidgets;
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-bold text-base">Customize Dashboard Widgets</h3>
+        <button onclick="App.closeModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        ${[
+          ['kpiRow', 'Top Summary KPI Cards (Income, Expenses, Cash Flow, Net Worth)'],
+          ['budgetBar', 'Monthly Master Budget Progress Bar'],
+          ['forecastCard', 'Month-End Spending Forecast Card'],
+          ['chartsRow', 'Category Breakdown & 6-Month Trend Charts'],
+          ['accountsGoalsRow', 'Account Balances, Savings Goals & Scheduled Bills'],
+          ['recentTx', 'Recent Transactions Feed']
+        ].map(([key, label]) => `
+          <label class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800 cursor-pointer">
+            <span>${label}</span>
+            <input type="checkbox" ${w[key] ? 'checked' : ''} onchange="App.toggleWidget('${key}', this.checked)" class="w-4 h-4 accent-indigo-600" />
+          </label>
+        `).join('')}
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 text-right">
+        <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Done</button>
+      </div>
+    `);
+  },
+
+  toggleWidget(key, val) {
+    this.state.settings.dashboardWidgets[key] = val;
+    this.saveState();
+    this.render();
+  },
+
+  renderTxListSnippet(txs) {
+    if (!txs.length) return `<p class="text-xs text-slate-400 py-4 text-center">No transactions found for the selected criteria.</p>`;
+    return `
+      <div class="divide-y divide-slate-200 dark:divide-slate-800 text-xs sm:text-sm">
+        ${txs.map(tx => {
+          const cat = this.state.categories.find(c => c.id === tx.categoryId) || { name: 'Transfer', icon: '🔄' };
+          const acc = this.state.accounts.find(a => a.id === tx.accountId);
+          const toAcc = tx.toAccountId ? this.state.accounts.find(a => a.id === tx.toAccountId) : null;
+          const isSplit = tx.splits && tx.splits.length > 0;
+          const colorCls = tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : tx.type === 'refund' ? 'text-cyan-500' : tx.type === 'transfer' ? 'text-indigo-500' : 'text-rose-600 dark:text-rose-400';
+          const prefix = tx.type === 'income' || tx.type === 'refund' ? '+' : tx.type === 'expense' ? '-' : '⇄ ';
+          return `
+            <div class="py-2.5 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">${tx.type === 'transfer' ? '🔄' : cat.icon}</div>
+                <div class="min-w-0">
+                  <div class="font-semibold truncate flex items-center gap-1.5">
+                    <span>${tx.description}</span>
+                    ${isSplit ? '<span class="px-1.5 py-0.5 text-[10px] rounded bg-purple-500/20 text-purple-400">Split</span>' : ''}
+                    ${tx.type === 'refund' ? '<span class="px-1.5 py-0.5 text-[10px] rounded bg-cyan-500/20 text-cyan-400">Refund</span>' : ''}
+                    ${tx.receiptData ? '<span title="Receipt Attached">📎</span>' : ''}
+                  </div>
+                  <div class="text-[11px] text-slate-400 truncate">
+                    ${tx.date} • ${acc ? acc.name : ''}${toAcc ? ' → ' + toAcc.name : ' • ' + cat.name}
+                    ${(tx.tags || []).map(t => `<span class="ml-1 text-indigo-400">#${t}</span>`).join('')}
+                  </div>
+                </div>
+              </div>
+              <div class="text-right shrink-0 flex items-center gap-2">
+                <div>
+                  <div class="font-bold ${colorCls}">${prefix}${this.formatMoney(tx.amount, tx.currency)}</div>
+                  ${tx.currency !== this.state.settings.reportCurrency ? `<div class="text-[10px] text-slate-400">≈ ${this.formatMoney(this.txInReportCurrency(tx), this.state.settings.reportCurrency)}</div>` : ''}
+                </div>
+                <button onclick="App.openTxModal('${tx.id}')" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-white" title="Edit / Audit">✎</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  },
+
+  renderTransactions(el) {
+    const f = this.txFilter;
+    let filtered = this.state.transactions.filter(tx => {
+      if (f.search) {
+        const q = f.search.toLowerCase();
+        const matchDesc = (tx.description || '').toLowerCase().includes(q);
+        const matchNotes = (tx.notes || '').toLowerCase().includes(q);
+        const matchTags = (tx.tags || []).some(t => t.toLowerCase().includes(q));
+        if (!matchDesc && !matchNotes && !matchTags) return false;
+      }
+      if (f.accountId !== 'ALL' && tx.accountId !== f.accountId && tx.toAccountId !== f.accountId) return false;
+      if (f.categoryId !== 'ALL') {
+        const inSplit = tx.splits && tx.splits.some(s => s.categoryId === f.categoryId);
+        if (tx.categoryId !== f.categoryId && !inSplit) return false;
+      }
+      if (f.type !== 'ALL' && tx.type !== f.type) return false;
+      if (f.currency !== 'ALL' && tx.currency !== f.currency) return false;
+      if (f.dateFrom && tx.date < f.dateFrom) return false;
+      if (f.dateTo && tx.date > f.dateTo) return false;
+      return true;
+    });
+
+    filtered.sort((a, b) => {
+      if (f.sort === 'date_asc') return a.date.localeCompare(b.date);
+      if (f.sort === 'amt_desc') return this.txInReportCurrency(b) - this.txInReportCurrency(a);
+      if (f.sort === 'amt_asc') return this.txInReportCurrency(a) - this.txInReportCurrency(b);
+      return b.date.localeCompare(a.date);
+    });
+
+    el.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <span class="text-xs font-semibold text-slate-400 shrink-0">⚡ Quick Templates:</span>
+        ${this.state.templates.map(tpl => `
+          <button onclick="App.applyTxTemplate('${tpl.id}')"
+            class="shrink-0 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-xs font-medium transition">
+            ${tpl.description} (${this.formatMoney(tpl.amount, tpl.currency)})
+          </button>
+        `).join('')}
+        <button onclick="App.openTxModal()" class="shrink-0 ml-auto px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold">+ New Transaction</button>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs">
+          <input type="text" placeholder="Search description, #tag, note..." value="${f.search}"
+            oninput="App.txFilter.search=this.value; App.render()"
+            class="lg:col-span-2 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2" />
+
+          <select onchange="App.txFilter.accountId=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-2">
+            <option value="ALL">All Accounts</option>
+            ${this.state.accounts.map(a => `<option value="${a.id}" ${f.accountId === a.id ? 'selected' : ''}>${a.name}</option>`).join('')}
+          </select>
+
+          <select onchange="App.txFilter.categoryId=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-2">
+            <option value="ALL">All Categories</option>
+            ${this.state.categories.map(c => `<option value="${c.id}" ${f.categoryId === c.id ? 'selected' : ''}>${c.icon} ${c.name}</option>`).join('')}
+          </select>
+
+          <select onchange="App.txFilter.type=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-2">
+            <option value="ALL" ${f.type === 'ALL' ? 'selected' : ''}>All Types</option>
+            <option value="expense" ${f.type === 'expense' ? 'selected' : ''}>Expenses</option>
+            <option value="income" ${f.type === 'income' ? 'selected' : ''}>Income</option>
+            <option value="refund" ${f.type === 'refund' ? 'selected' : ''}>Refunds</option>
+            <option value="transfer" ${f.type === 'transfer' ? 'selected' : ''}>Transfers</option>
+          </select>
+
+          <select onchange="App.txFilter.sort=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-2">
+            <option value="date_desc" ${f.sort === 'date_desc' ? 'selected' : ''}>Newest First</option>
+            <option value="date_asc" ${f.sort === 'date_asc' ? 'selected' : ''}>Oldest First</option>
+            <option value="amt_desc" ${f.sort === 'amt_desc' ? 'selected' : ''}>Highest Amount</option>
+            <option value="amt_asc" ${f.sort === 'amt_asc' ? 'selected' : ''}>Lowest Amount</option>
+          </select>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span>From:</span>
+            <input type="date" value="${f.dateFrom}" onchange="App.txFilter.dateFrom=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1 border border-slate-300 dark:border-slate-700" />
+            <span>To:</span>
+            <input type="date" value="${f.dateTo}" onchange="App.txFilter.dateTo=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1 border border-slate-300 dark:border-slate-700" />
+            <button onclick="App.resetTxFilters()" class="text-indigo-500 hover:underline ml-1">Reset Filters</button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            ${this.selectedTxIds.size > 0 ? `
+              <button onclick="App.openBulkEditModal()" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 font-semibold">Bulk Edit (${this.selectedTxIds.size})</button>
+              <button onclick="App.bulkDeleteSelected()" class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-400 font-semibold">Delete (${this.selectedTxIds.size})</button>
+            ` : ''}
+            <button onclick="App.exportTransactions('csv')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-medium">Export CSV</button>
+            <button onclick="App.exportTransactions('xlsx')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-medium">Export Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div class="divide-y divide-slate-200 dark:divide-slate-800">
+          ${filtered.map(tx => {
+            const cat = this.state.categories.find(c => c.id === tx.categoryId) || { name: 'Transfer', icon: '🔄' };
+            const acc = this.state.accounts.find(a => a.id === tx.accountId);
+            const toAcc = tx.toAccountId ? this.state.accounts.find(a => a.id === tx.toAccountId) : null;
+            const checked = this.selectedTxIds.has(tx.id);
+            const colorCls = tx.type === 'income' ? 'text-emerald-500' : tx.type === 'refund' ? 'text-cyan-400' : tx.type === 'transfer' ? 'text-indigo-400' : 'text-rose-500';
+            return `
+              <div class="py-3 flex items-center justify-between gap-2 text-xs sm:text-sm">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <input type="checkbox" ${checked ? 'checked' : ''} onchange="App.toggleSelectTx('${tx.id}', this.checked)" class="w-4 h-4 accent-indigo-600 shrink-0" />
+                  <div class="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">${tx.type === 'transfer' ? '🔄' : cat.icon}</div>
+                  <div class="min-w-0">
+                    <div class="font-semibold truncate flex items-center gap-1.5">
+                      <span>${tx.description}</span>
+                      ${tx.splits && tx.splits.length ? `<span class="px-1.5 py-0.5 text-[10px] rounded bg-purple-500/20 text-purple-400">Split (${tx.splits.length})</span>` : ''}
+                      ${tx.type === 'refund' ? `<span class="px-1.5 py-0.5 text-[10px] rounded bg-cyan-500/20 text-cyan-400">Refund Offset</span>` : ''}
+                    </div>
+                    <div class="text-[11px] text-slate-400 truncate">
+                      ${tx.date} • ${acc ? acc.name : ''}${toAcc ? ' → ' + toAcc.name : ' • ' + cat.name}
+                      ${tx.paymentMethod ? ' • ' + tx.paymentMethod : ''}
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <div class="text-right">
+                    <div class="font-bold ${colorCls}">
+                      ${tx.type === 'income' || tx.type === 'refund' ? '+' : tx.type === 'expense' ? '-' : '⇄ '}${this.formatMoney(tx.amount, tx.currency)}
+                    </div>
+                    <div class="text-[10px] text-slate-400">FX: ${tx.fxRateUsed || this.state.settings.fxRateKHR}</div>
+                  </div>
+                  <button onclick="App.openTxModal('${tx.id}')" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white">✎</button>
+                </div>
+              </div>
+            `;
+          }).join('') || '<p class="text-center text-slate-400 py-8 text-sm">No matching transactions.</p>'}
+        </div>
+      </div>
+    `;
+  },
+
+  resetTxFilters() {
+    this.txFilter = { search: '', accountId: 'ALL', categoryId: 'ALL', type: 'ALL', currency: 'ALL', dateFrom: '', dateTo: '', sort: 'date_desc' };
+    this.selectedTxIds.clear();
+    this.render();
+  },
+
+  toggleSelectTx(id, checked) {
+    if (checked) this.selectedTxIds.add(id);
+    else this.selectedTxIds.delete(id);
+    this.render();
+  },
+
+  openBulkEditModal() {
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-base">Bulk Edit ${this.selectedTxIds.size} Transactions</h3>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Assign New Category (Optional)</label>
+          <select id="bulk-cat" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+            <option value="">— Keep Existing Category —</option>
+            ${this.state.categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Append Tag (Optional)</label>
+          <input id="bulk-tag" type="text" placeholder="e.g. tax-deductible" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-sm">Cancel</button>
+        <button onclick="App.applyBulkEdit()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Apply Changes</button>
+      </div>
+    `);
+  },
+
+  applyBulkEdit() {
+    const catId = document.getElementById('bulk-cat').value;
+    const tag = document.getElementById('bulk-tag').value.trim();
+    this.state.transactions.forEach(tx => {
+      if (this.selectedTxIds.has(tx.id)) {
+        if (catId && tx.type !== 'transfer') tx.categoryId = catId;
+        if (tag) tx.tags = Array.from(new Set([...(tx.tags || []), tag]));
+      }
+    });
+    this.selectedTxIds.clear();
+    this.saveState();
+    this.closeModal();
+    this.toast('Bulk update complete');
+    this.render();
+  },
+
+  bulkDeleteSelected() {
+    if (!confirm(`Permanently delete ${this.selectedTxIds.size} selected transaction(s)?`)) return;
+    this.state.transactions = this.state.transactions.filter(t => !this.selectedTxIds.has(t.id));
+    this.selectedTxIds.clear();
+    this.saveState();
+    this.toast('Selected transactions deleted');
+    this.render();
+  },
+
+  applyTxTemplate(tplId) {
+    const tpl = this.state.templates.find(t => t.id === tplId);
+    if (!tpl) return;
+    this.openTxModal(null, tpl);
+  },
+
+  openTxModal(txId = null, prefill = null) {
+    const existing = txId ? this.state.transactions.find(t => t.id === txId) : null;
+    const base = existing || prefill || {
+      date: new Date().toISOString().slice(0, 10),
+      type: 'expense',
+      description: '',
+      amount: '',
+      currency: 'USD',
+      fxRateUsed: this.state.settings.fxRateKHR,
+      accountId: this.state.accounts[0]?.id || '',
+      toAccountId: this.state.accounts[1]?.id || '',
+      toAmount: '',
+      categoryId: 'cat_food',
+      paymentMethod: 'KHQR',
+      tags: [],
+      notes: '',
+      splits: [],
+      receiptData: null,
+      history: []
+    };
+
+    this._editingSplits = JSON.parse(JSON.stringify(base.splits || []));
+    this._editingReceipt = base.receiptData || null;
+
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-bold text-base">${existing ? 'Edit Transaction' : 'New Transaction'}</h3>
+        <button onclick="App.closeModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div class="p-4 overflow-y-auto space-y-3 text-xs sm:text-sm">
+        <div class="grid grid-cols-4 gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          ${['expense', 'income', 'refund', 'transfer'].map(t => `
+            <button type="button" onclick="App.switchTxModalType('${t}')" id="tx-type-btn-${t}"
+              class="py-2 rounded-lg font-semibold capitalize transition ${base.type === t ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500'}">${t}</button>
+          `).join('')}
+        </div>
+        <input type="hidden" id="tx-type" value="${base.type}" />
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">Date</label>
+            <input type="date" id="tx-date" value="${base.date || new Date().toISOString().slice(0, 10)}"
+              class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2 border border-slate-300 dark:border-slate-700" />
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">Amount</label>
+            <input type="number" step="any" id="tx-amount" value="${base.amount}" placeholder="0.00"
+              class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2 font-bold border border-slate-300 dark:border-slate-700" />
+          </div>
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-[11px] text-slate-400 mb-1">Currency & FX Rate</label>
+            <div class="flex gap-1.5">
+              <select id="tx-currency" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2 border border-slate-300 dark:border-slate-700 font-semibold">
+                <option value="USD" ${base.currency === 'USD' ? 'selected' : ''}>USD ($)</option>
+                <option value="KHR" ${base.currency === 'KHR' ? 'selected' : ''}>KHR (៛)</option>
+              </select>
+              <input type="number" id="tx-fx" value="${base.fxRateUsed || this.state.settings.fxRateKHR}"
+                class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2 border border-slate-300 dark:border-slate-700 text-xs" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Description / Merchant</label>
+          <input type="text" id="tx-desc" value="${base.description || ''}" placeholder="e.g., Grocery shopping, EDC Electricity, Salary..."
+            oninput="App.autoSuggestCategoryFromDesc(this.value)"
+            class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">From / Primary Account</label>
+            <select id="tx-account" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+              ${this.state.accounts.map(a => `<option value="${a.id}" ${base.accountId === a.id ? 'selected' : ''}>${a.name} (${a.currency})</option>`).join('')}
+            </select>
+          </div>
+
+          <div id="tx-cat-wrap" class="${base.type === 'transfer' ? 'hidden' : ''}">
+            <label class="block text-[11px] text-slate-400 mb-1">Category</label>
+            <select id="tx-category" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+              ${this.state.categories.map(c => `<option value="${c.id}" ${base.categoryId === c.id ? 'selected' : ''}>${c.icon} ${c.name}</option>`).join('')}
+            </select>
+          </div>
+
+          <div id="tx-transfer-wrap" class="${base.type === 'transfer' ? '' : 'hidden'}">
+            <label class="block text-[11px] text-slate-400 mb-1">Destination Account</label>
+            <select id="tx-to-account" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+              ${this.state.accounts.map(a => `<option value="${a.id}" ${base.toAccountId === a.id ? 'selected' : ''}>${a.name} (${a.currency})</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div id="tx-splits-section" class="${base.type === 'transfer' ? 'hidden' : ''} p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold">Split Across Multiple Categories</span>
+            <button type="button" onclick="App.addSplitRow()" class="text-xs text-indigo-500 font-semibold hover:underline">+ Add Split Row</button>
+          </div>
+          <div id="tx-splits-container" class="space-y-2"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">Payment Method</label>
+            <input type="text" id="tx-method" value="${base.paymentMethod || 'KHQR'}"
+              class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2 border border-slate-300 dark:border-slate-700" />
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">Tags (comma separated)</label>
+            <input type="text" id="tx-tags" value="${(base.tags || []).join(', ')}"
+              class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2 border border-slate-300 dark:border-slate-700" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Notes</label>
+          <input type="text" id="tx-notes" value="${base.notes || ''}"
+            class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2 border border-slate-300 dark:border-slate-700" />
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex gap-2">
+          ${existing ? `<button onclick="App.deleteTx('${existing.id}')" class="px-3 py-2 rounded-xl bg-rose-500/20 text-rose-400 text-xs font-semibold">Delete</button>` : ''}
+        </div>
+        <div class="flex gap-2">
+          <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs sm:text-sm font-medium">Cancel</button>
+          <button onclick="App.saveTx('${existing ? existing.id : ''}')" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold">Save Transaction</button>
+        </div>
+      </div>
+    `);
+
+    this.renderSplitRows();
+  },
+
+  switchTxModalType(type) {
+    document.getElementById('tx-type').value = type;
+    ['expense', 'income', 'refund', 'transfer'].forEach(t => {
+      const btn = document.getElementById(`tx-type-btn-${t}`);
+      if (btn) btn.className = `py-2 rounded-lg font-semibold capitalize transition ${t === type ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500'}`;
+    });
+    document.getElementById('tx-cat-wrap').classList.toggle('hidden', type === 'transfer');
+    document.getElementById('tx-splits-section').classList.toggle('hidden', type === 'transfer');
+    document.getElementById('tx-transfer-wrap').classList.toggle('hidden', type !== 'transfer');
+  },
+
+  autoSuggestCategoryFromDesc(desc) {
+    const lower = (desc || '').toLowerCase();
+    for (const rule of this.state.settings.categoryRules) {
+      if (lower.includes(rule.keyword.toLowerCase())) {
+        const catSel = document.getElementById('tx-category');
+        if (catSel) catSel.value = rule.categoryId;
+        break;
+      }
+    }
+  },
+
+  addSplitRow() {
+    this._editingSplits.push({ categoryId: 'cat_food', amount: 0, note: '' });
+    this.renderSplitRows();
+  },
+
+  removeSplitRow(idx) {
+    this._editingSplits.splice(idx, 1);
+    this.renderSplitRows();
+  },
+
+  renderSplitRows() {
+    const container = document.getElementById('tx-splits-container');
+    if (!container) return;
+    if (!this._editingSplits.length) {
+      container.innerHTML = `<p class="text-[11px] text-slate-400">No splits active. Transaction uses the primary category above.</p>`;
+      return;
+    }
+    container.innerHTML = this._editingSplits.map((s, idx) => `
+      <div class="grid grid-cols-12 gap-1.5 items-center text-xs">
+        <select onchange="App._editingSplits[${idx}].categoryId=this.value" class="col-span-5 bg-white dark:bg-slate-900 rounded-lg p-1.5 border border-slate-300 dark:border-slate-700">
+          ${this.state.categories.map(c => `<option value="${c.id}" ${s.categoryId === c.id ? 'selected' : ''}>${c.icon}${c.name}</option>`).join('')}
+        </select>
+        <input type="number" step="any" value="${s.amount}" placeholder="Amount" oninput="App._editingSplits[${idx}].amount=Number(this.value)"
+          class="col-span-3 bg-white dark:bg-slate-900 rounded-lg p-1.5 border border-slate-300 dark:border-slate-700" />
+        <input type="text" value="${s.note || ''}" placeholder="Split note" oninput="App._editingSplits[${idx}].note=this.value"
+          class="col-span-3 bg-white dark:bg-slate-900 rounded-lg p-1.5 border border-slate-300 dark:border-slate-700" />
+        <button type="button" onclick="App.removeSplitRow(${idx})" class="col-span-1 text-rose-500 font-bold">✕</button>
+      </div>
+    `).join('');
+  },
+
+  saveTx(existingId) {
+    const type = document.getElementById('tx-type').value;
+    const date = document.getElementById('tx-date').value;
+    const amount = Number(document.getElementById('tx-amount').value);
+    const currency = document.getElementById('tx-currency').value;
+    const fxRateUsed = Number(document.getElementById('tx-fx').value) || this.state.settings.fxRateKHR;
+    const description = document.getElementById('tx-desc').value.trim() || 'Untitled Transaction';
+    const accountId = document.getElementById('tx-account').value;
+    const toAccountId = document.getElementById('tx-to-account').value;
+    const categoryId = document.getElementById('tx-category').value;
+    const paymentMethod = document.getElementById('tx-method').value.trim();
+    const tags = document.getElementById('tx-tags').value.split(',').map(s => s.trim()).filter(Boolean);
+    const notes = document.getElementById('tx-notes').value.trim();
+
+    if (!date || !amount || amount <= 0) return this.toast('Please enter a valid date and positive amount.');
+    if (type === 'transfer' && accountId === toAccountId) return this.toast('Source and destination accounts must be different.');
+
+    const splits = type !== 'transfer' ? (this._editingSplits || []).filter(s => s.amount > 0) : [];
+    if (splits.length > 0) {
+      const splitSum = splits.reduce((sum, s) => sum + Number(s.amount), 0);
+      if (Math.abs(splitSum - amount) > 0.02) {
+        return this.toast(`Split total (${splitSum}) must equal transaction amount (${amount}).`);
+      }
+    }
+
+    let toAmount = amount;
+    if (type === 'transfer') {
+      const destAcc = this.state.accounts.find(a => a.id === toAccountId);
+      if (destAcc) toAmount = this.convertAmount(amount, currency, destAcc.currency, fxRateUsed);
+    }
+
+    if (existingId) {
+      const idx = this.state.transactions.findIndex(t => t.id === existingId);
+      if (idx >= 0) {
+        const prev = this.state.transactions[idx];
+        this.state.transactions[idx] = {
+          ...prev, type, date, amount, toAmount, currency, fxRateUsed, description,
+          accountId, toAccountId: type === 'transfer' ? toAccountId : null,
+          categoryId: type === 'transfer' ? 'cat_adjust' : categoryId,
+          paymentMethod, tags, notes, splits
+        };
+      }
+    } else {
+      this.state.transactions.push({
+        id: 'tx_' + Date.now(),
+        type, date, amount, toAmount, currency, fxRateUsed, description,
+        accountId, toAccountId: type === 'transfer' ? toAccountId : null,
+        categoryId: type === 'transfer' ? 'cat_adjust' : categoryId,
+        paymentMethod, tags, notes, splits, history: []
+      });
+    }
+
+    this.saveState();
+    this.closeModal();
+    this.toast('Transaction saved');
+    this.render();
+  },
+
+  deleteTx(id) {
+    if (!confirm('Delete this transaction permanently?')) return;
+    this.state.transactions = this.state.transactions.filter(t => t.id !== id);
+    this.saveState();
+    this.closeModal();
+    this.toast('Transaction deleted');
+    this.render();
+  },
+
+  renderBudgets(el) {
+    const month = this.state.settings.selectedMonth;
+    const curr = this.state.settings.reportCurrency;
+    const b = this.getBudgetForMonth(month, curr);
+    const prevMonth = this.getPreviousMonthStr(month);
+    const prevB = this.getBudgetForMonth(prevMonth, curr);
+
+    const year = month.slice(0, 4);
+    let annualPlanned = 0;
+    let annualActual = 0;
+    for (let m = 1; m <= 12; m++) {
+      const ym = `${year}-${String(m).padStart(2, '0')}`;
+      if (this.state.budgets[ym] || this.state.transactions.some(t => t.date.startsWith(ym))) {
+        const mb = this.getBudgetForMonth(ym, curr);
+        annualPlanned += mb.overallPlanned;
+        annualActual += mb.actualExpense;
+      }
+    }
+
+    el.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="font-bold text-base">Monthly Budget Planner — ${month}</h3>
+          <p class="text-xs text-slate-400">Historical lock active: editing ${month} never alters ${prevMonth} or earlier months.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 cursor-pointer font-medium">
+            <input type="checkbox" ${b.raw.rolloverEnabled ? 'checked' : ''} onchange="App.toggleBudgetRollover('${month}', this.checked)" class="accent-indigo-600" />
+            <span>Rollover Unspent from ${prevMonth}</span>
+          </label>
+          <button onclick="App.copyPreviousMonthBudget('${month}')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-semibold">📋 Copy ${prevMonth} Budget</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Master Spending Budget (${month})</div>
+          <div class="text-2xl font-bold">${this.formatMoney(b.overallPlanned, curr)}</div>
+          <div class="mt-2 flex items-center gap-2 text-xs">
+            <span>Base (USD):</span>
+            <input type="number" value="${b.raw.overallUSD}" onchange="App.updateOverallBudget('${month}', this.value)"
+              class="w-24 bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1 font-bold border border-slate-300 dark:border-slate-700" />
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Income Allocation & Savings Target</div>
+          <div class="text-2xl font-bold text-emerald-500">${this.formatMoney(b.savingsTarget, curr)}</div>
+          <div class="mt-2 flex items-center gap-2 text-xs">
+            <span>Target (USD):</span>
+            <input type="number" value="${b.raw.savingsTargetUSD || 0}" onchange="App.updateSavingsTarget('${month}', this.value)"
+              class="w-24 bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1 font-bold border border-slate-300 dark:border-slate-700" />
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">${year} Annual YTD Budget Summary</div>
+          <div class="text-2xl font-bold">${this.formatMoney(annualActual, curr)} <span class="text-xs font-normal text-slate-400">/ ${this.formatMoney(annualPlanned, curr)}</span></div>
+          <div class="text-[11px] text-slate-400 mt-2">
+            MoM vs ${prevMonth}: <strong>${this.formatMoney(b.actualExpense - prevB.actualExpense, curr)}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <h4 class="font-bold text-sm mb-3">Category Budgets & Spending Pace (${month})</h4>
+        <div class="space-y-3">
+          ${b.categoryRows.map(row => `
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5 text-xs sm:text-sm">
+                <div class="font-semibold">${row.category.icon}${row.category.name}</div>
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-slate-400">Budget (USD):</span>
+                  <input type="number" value="${row.baseUSD}" onchange="App.updateCategoryBudget('${month}', '${row.category.id}', this.value)"
+                    class="w-20 bg-white dark:bg-slate-900 rounded-lg px-2 py-1 font-bold border border-slate-300 dark:border-slate-700 text-right" />
+                </div>
+              </div>
+              <div class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-1.5">
+                <div class="h-full rounded-full ${row.pct > 100 ? 'bg-rose-500' : row.pct > 80 ? 'bg-amber-500' : 'bg-emerald-500'}"
+                     style="width:${Math.min(100, row.pct)}%"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-400">
+                <span>Actual: <strong>${this.formatMoney(row.actual, curr)}</strong> / Planned: <strong>${this.formatMoney(row.effectivePlanned, curr)}</strong></span>
+                <span class="${row.remaining >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-semibold">
+                  ${row.remaining >= 0 ? `${this.formatMoney(row.remaining, curr)} left` : `${this.formatMoney(Math.abs(row.remaining), curr)} over`}
+                </span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  },
+
+  updateOverallBudget(month, valUSD) {
+    this.getBudgetForMonth(month);
+    this.state.budgets[month].overallUSD = Math.max(0, Number(valUSD) || 0);
+    this.saveState();
+    this.render();
+  },
+
+  updateSavingsTarget(month, valUSD) {
+    this.getBudgetForMonth(month);
+    this.state.budgets[month].savingsTargetUSD = Math.max(0, Number(valUSD) || 0);
+    this.saveState();
+    this.render();
+  },
+
+  updateCategoryBudget(month, catId, valUSD) {
+    this.getBudgetForMonth(month);
+    this.state.budgets[month].categories[catId] = Math.max(0, Number(valUSD) || 0);
+    this.saveState();
+    this.render();
+  },
+
+  toggleBudgetRollover(month, enabled) {
+    this.getBudgetForMonth(month);
+    this.state.budgets[month].rolloverEnabled = !!enabled;
+    this.saveState();
+    this.render();
+  },
+
+  copyPreviousMonthBudget(month) {
+    const prev = this.getPreviousMonthStr(month);
+    if (!this.state.budgets[prev]) return this.toast(`No saved budget found for ${prev}`);
+    this.state.budgets[month] = JSON.parse(JSON.stringify(this.state.budgets[prev]));
+    this.saveState();
+    this.toast(`Copied budget settings from ${prev} to ${month}`);
+    this.render();
+  },
+
+  renderAccounts(el) {
+    const curr = this.state.settings.reportCurrency;
+    const nw = this.getNetWorthSummary(curr);
+
+    el.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400">Total Assets</div>
+          <div class="text-2xl font-bold text-emerald-500 mt-1">${this.formatMoney(nw.assets, curr)}</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400">Total Liabilities & Credit Debt</div>
+          <div class="text-2xl font-bold text-rose-500 mt-1">${this.formatMoney(nw.liabilities, curr)}</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400">Net Worth (${curr})</div>
+          <div class="text-2xl font-bold mt-1">${this.formatMoney(nw.netWorth, curr)}</div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap justify-between items-center gap-2">
+        <h3 class="font-bold text-sm">Accounts & Liabilities Ledger</h3>
+        <div class="flex gap-2">
+          <button onclick="App.openTxModal(null, {type:'transfer'})" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-xs font-semibold">⇄ Transfer / Pay Card</button>
+          <button onclick="App.openAccountModal()" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold">+ Add Account / Loan</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ${this.state.accounts.map(acc => {
+          const bal = this.getAccountBalance(acc.id);
+          return `
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold ${acc.isLiability ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'}">
+                    ${acc.isLiability ? 'Liability / Debt' : acc.type}
+                  </span>
+                  <h4 class="font-bold text-base mt-1">${acc.name}</h4>
+                  <p class="text-xs text-slate-400">Currency: ${acc.currency} • Opening: ${this.formatMoney(acc.openingBalance, acc.currency)}</p>
+                </div>
+                <div class="text-right">
+                  <div class="text-xl font-bold ${bal < 0 ? 'text-rose-500' : 'text-emerald-500'}">${this.formatMoney(bal, acc.currency)}</div>
+                </div>
+              </div>
+              <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <button onclick="App.drilldownTransactions({accountId:'${acc.id}'})" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800">Transactions</button>
+                <button onclick="App.openReconcileModal('${acc.id}')" class="px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-500 font-semibold">⚖️ Reconcile Balance</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  },
+
+  openAccountModal() {
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-base">Add Account or Liability</h3>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <input id="acc-name" type="text" placeholder="Account Name (e.g., ACLEDA Bank, Wing)" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        <div class="grid grid-cols-2 gap-2.5">
+          <select id="acc-type" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+            <option value="bank">Bank Account (Asset)</option>
+            <option value="cash">Cash (Asset)</option>
+            <option value="ewallet">E-Wallet (Asset)</option>
+            <option value="savings">Savings Account (Asset)</option>
+            <option value="credit">Credit Card (Liability)</option>
+            <option value="loan">Loan / Debt (Liability)</option>
+          </select>
+          <select id="acc-curr" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+            <option value="USD">USD ($)</option>
+            <option value="KHR">KHR (៛)</option>
+          </select>
+        </div>
+        <input id="acc-open" type="number" step="any" value="0" placeholder="Opening Balance" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-sm">Cancel</button>
+        <button onclick="App.saveNewAccount()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Create Account</button>
+      </div>
+    `);
+  },
+
+  saveNewAccount() {
+    const name = document.getElementById('acc-name').value.trim();
+    const type = document.getElementById('acc-type').value;
+    const currency = document.getElementById('acc-curr').value;
+    const openingBalance = Number(document.getElementById('acc-open').value) || 0;
+    if (!name) return this.toast('Enter an account name');
+    this.state.accounts.push({ id: 'acc_' + Date.now(), name, type, currency, openingBalance, isLiability: type === 'credit' || type === 'loan' });
+    this.saveState();
+    this.closeModal();
+    this.toast('Account added');
+    this.render();
+  },
+
+  openReconcileModal(accId) {
+    const acc = this.state.accounts.find(a => a.id === accId);
+    if (!acc) return;
+    const currentBal = this.getAccountBalance(accId);
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-base">Reconcile Account: ${acc.name}</h3>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <p class="text-xs text-slate-400">Recorded Balance: <strong>${this.formatMoney(currentBal, acc.currency)}</strong></p>
+        <input id="rec-actual-bal" type="number" step="any" value="${currentBal}" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 font-bold border border-slate-300 dark:border-slate-700" />
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-sm">Cancel</button>
+        <button onclick="App.confirmReconcile('${acc.id}')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Reconcile Now</button>
+      </div>
+    `);
+  },
+
+  confirmReconcile(accId) {
+    const acc = this.state.accounts.find(a => a.id === accId);
+    const currentBal = this.getAccountBalance(accId);
+    const actualBal = Number(document.getElementById('rec-actual-bal').value);
+    const diff = +(actualBal - currentBal).toFixed(2);
+    if (Math.abs(diff) < 0.001) {
+      this.closeModal();
+      return this.toast('Balance already matches!');
+    }
+    this.state.transactions.push({
+      id: 'tx_rec_' + Date.now(),
+      date: new Date().toISOString().slice(0, 10),
+      type: diff > 0 ? 'income' : 'expense',
+      description: `Reconciliation Balance Adjustment (${acc.name})`,
+      amount: Math.abs(diff),
+      currency: acc.currency,
+      fxRateUsed: this.state.settings.fxRateKHR,
+      accountId: acc.id,
+      categoryId: 'cat_adjust',
+      paymentMethod: 'Reconciliation',
+      tags: ['reconciliation'],
+      notes: `Adjusted from ${currentBal} to ${actualBal}`,
+      history: []
+    });
+    this.saveState();
+    this.closeModal();
+    this.toast('Account reconciled');
+    this.render();
+  },
+
+  renderGoals(el) {
+    const mMetrics = this.getPeriodMetrics(this.state.settings.selectedMonth, 'USD');
+    const recommendedEFund = Math.max(3000, Math.round(mMetrics.netExpense * 6));
+
+    el.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="font-bold text-base">Savings Goals & Emergency Fund Planner</h3>
+          <p class="text-xs text-slate-400">6-Month Emergency Fund Benchmark: <strong>${this.formatMoney(recommendedEFund, 'USD')}</strong></p>
+        </div>
+        <button onclick="App.openGoalModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">+ New Savings Goal</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ${this.state.goals.map(g => {
+          const pct = g.targetAmount > 0 ? Math.min(100, (g.currentAmount / g.targetAmount) * 100) : 0;
+          const remaining = Math.max(0, g.targetAmount - g.currentAmount);
+          return `
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h4 class="font-bold text-base">${g.name}</h4>
+                  <p class="text-xs text-slate-400">Target Date: ${g.targetDate}</p>
+                </div>
+                <div class="text-right">
+                  <div class="text-lg font-bold text-emerald-500">${this.formatMoney(g.currentAmount, g.currency)}</div>
+                  <div class="text-xs text-slate-400">of ${this.formatMoney(g.targetAmount, g.currency)} (${pct.toFixed(1)}%)</div>
+                </div>
+              </div>
+              <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-500 rounded-full" style="width:${pct}%"></div>
+              </div>
+              <div class="flex justify-between text-xs text-slate-400">
+                <span>Monthly Target: <strong>${this.formatMoney(g.monthlyTarget || 0, g.currency)}/mo</strong></span>
+                <span>Remaining: <strong>${this.formatMoney(remaining, g.currency)}</strong></span>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <button onclick="App.adjustGoal('${g.id}', 1)" class="flex-1 py-1.5 rounded-xl bg-emerald-600 text-white font-semibold">+ Contribute</button>
+                <button onclick="App.adjustGoal('${g.id}', -1)" class="flex-1 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 font-semibold">- Withdraw</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  },
+
+  openGoalModal() {
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-base">Create Savings Goal</h3>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <input id="goal-name" type="text" placeholder="Goal Name" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        <div class="grid grid-cols-2 gap-2.5">
+          <input id="goal-target" type="number" placeholder="Target Amount (USD)" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+          <input id="goal-current" type="number" placeholder="Current Saved (USD)" value="0" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <input id="goal-monthly" type="number" placeholder="Monthly Target" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+          <input id="goal-date" type="date" value="2027-12-31" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-sm">Cancel</button>
+        <button onclick="App.saveNewGoal()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Save Goal</button>
+      </div>
+    `);
+  },
+
+  saveNewGoal() {
+    const name = document.getElementById('goal-name').value.trim();
+    const targetAmount = Number(document.getElementById('goal-target').value) || 0;
+    const currentAmount = Number(document.getElementById('goal-current').value) || 0;
+    const monthlyTarget = Number(document.getElementById('goal-monthly').value) || 100;
+    const targetDate = document.getElementById('goal-date').value || '2027-12-31';
+    if (!name || targetAmount <= 0) return this.toast('Enter valid goal name and target');
+    this.state.goals.push({ id: 'goal_' + Date.now(), name, targetAmount, currentAmount, currency: 'USD', monthlyTarget, targetDate, linkedAccountId: 'acc_save_usd', isEmergencyFund: false, history: [] });
+    this.saveState();
+    this.closeModal();
+    this.toast('Savings goal created');
+    this.render();
+  },
+
+  adjustGoal(goalId, sign) {
+    const g = this.state.goals.find(x => x.id === goalId);
+    if (!g) return;
+    const raw = prompt(`${sign > 0 ? 'Contribute to' : 'Withdraw from'} "${g.name}" (${g.currency}):`, g.monthlyTarget || 100);
+    const amt = Number(raw);
+    if (!amt || amt <= 0) return;
+    g.currentAmount = Math.max(0, g.currentAmount + sign * amt);
+    this.saveState();
+    this.toast('Goal balance updated');
+    this.render();
+  },
+
+  renderCalendar(el) {
+    const month = this.state.settings.selectedMonth;
+    const curr = this.state.settings.reportCurrency;
+    const bills = this.getUpcomingBillsForMonth(month, curr);
+
+    el.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 class="font-bold text-base">Financial Calendar & Recurring Schedule (${month})</h3>
+          <p class="text-xs text-slate-400">Prevent duplicate recurring entries with one-tap ledger posting.</p>
+        </div>
+        <button onclick="App.openRecurringModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">+ Add Recurring Schedule</button>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5">
+        ${bills.map(b => `
+          <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs sm:text-sm">
+            <div>
+              <div class="font-semibold flex items-center gap-2">
+                <span>${b.description}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.isPaid ? 'bg-emerald-500/20 text-emerald-400' : b.isOverdue ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}">
+                  ${b.isPaid ? 'Posted ✓' : b.isOverdue ? 'Overdue' : 'Scheduled'}
+                </span>
+              </div>
+              <div class="text-xs text-slate-400">Due: ${b.dueDate} •${this.formatMoney(b.amount, b.currency)}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              ${!b.isPaid ? `<button onclick="App.postRecurringItem('${b.id}', '${month}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold">Post to Ledger</button>` : ''}
+              <button onclick="App.deleteRecurring('${b.id}')" class="p-1.5 text-slate-400 hover:text-rose-500">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  },
+
+  postRecurringItem(recId, month) {
+    const r = this.state.recurring.find(x => x.id === recId);
+    if (!r) return;
+    const already = this.state.transactions.some(t => t.recurringId === r.id && t.date.startsWith(month));
+    if (already || r.lastGeneratedPeriod === month) return this.toast('Already posted for ' + month);
+    const dueDate = `${month}-${String(r.dayOfMonth || 1).padStart(2, '0')}`;
+    this.state.transactions.push({
+      id: 'tx_rec_' + Date.now(),
+      recurringId: r.id,
+      date: dueDate,
+      type: r.type,
+      description: r.description,
+      amount: r.amount,
+      currency: r.currency,
+      fxRateUsed: this.state.settings.fxRateKHR,
+      accountId: r.accountId,
+      categoryId: r.categoryId,
+      paymentMethod: 'Scheduled Recurring',
+      tags: ['recurring'],
+      notes: `Auto-posted for ${month}`,
+      history: []
+    });
+    r.lastGeneratedPeriod = month;
+    this.saveState();
+    this.toast(`Posted "${r.description}" to ${month} ledger`);
+    this.render();
+  },
+
+  openRecurringModal() {
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-base">New Recurring Payment or Income</h3>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <input id="rec-desc" type="text" placeholder="Description" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        <div class="grid grid-cols-3 gap-2">
+          <select id="rec-type" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+          <input id="rec-amt" type="number" step="any" placeholder="Amount" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+          <select id="rec-curr" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+            <option value="USD">USD ($)</option>
+            <option value="KHR">KHR (៛)</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <select id="rec-acc" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+            ${this.state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+          </select>
+          <select id="rec-cat" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700">
+            ${this.state.categories.map(c => `<option value="${c.id}">${c.icon}${c.name}</option>`).join('')}
+          </select>
+          <input id="rec-day" type="number" min="1" max="28" value="15" class="bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-300 dark:border-slate-700" />
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-sm">Cancel</button>
+        <button onclick="App.saveNewRecurring()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Save Schedule</button>
+      </div>
+    `);
+  },
+
+  saveNewRecurring() {
+    const description = document.getElementById('rec-desc').value.trim();
+    const type = document.getElementById('rec-type').value;
+    const amount = Number(document.getElementById('rec-amt').value) || 0;
+    const currency = document.getElementById('rec-curr').value;
+    const accountId = document.getElementById('rec-acc').value;
+    const categoryId = document.getElementById('rec-cat').value;
+    const dayOfMonth = Math.min(28, Math.max(1, Number(document.getElementById('rec-day').value) || 1));
+    if (!description || amount <= 0) return this.toast('Enter valid description and amount');
+    this.state.recurring.push({ id: 'rec_' + Date.now(), description, type, amount, currency, accountId, categoryId, frequency: 'monthly', dayOfMonth, active: true, lastGeneratedPeriod: '' });
+    this.saveState();
+    this.closeModal();
+    this.toast('Recurring schedule added');
+    this.render();
+  },
+
+  deleteRecurring(id) {
+    this.state.recurring = this.state.recurring.filter(r => r.id !== id);
+    this.saveState();
+    this.render();
+  },
+
+  renderInsights(el) {
+    const month = this.state.settings.selectedMonth;
+    const prevMonth = this.getPreviousMonthStr(month);
+    const curr = this.state.settings.reportCurrency;
+    const b = this.getBudgetForMonth(month, curr);
+    const prevM = this.getPeriodMetrics(prevMonth, curr);
+    const insights = [];
+
+    const liquidAfterBills = (b.actualIncome - b.actualExpense) - b.unpaidUpcomingBills;
+    insights.push({
+      title: 'Available Cash Flow After Scheduled Bills',
+      badge: 'Liquidity Check',
+      summary: `After subtracting ${this.formatMoney(b.unpaidUpcomingBills, curr)} in unpaid scheduled bills for ${month}, your net monthly cash flow cushion is ${this.formatMoney(liquidAfterBills, curr)}.`,
+      formula: `Net Cash Flow (${this.formatMoney(b.actualIncome - b.actualExpense, curr)}) − Unpaid Bills (${this.formatMoney(b.unpaidUpcomingBills, curr)}) = ${this.formatMoney(liquidAfterBills, curr)}.`
+    });
+
+    b.categoryRows.forEach(row => {
+      const prevAmt = Math.max(0, prevM.byCategory[row.category.id] || 0);
+      if (row.actual > 0 && prevAmt > 0 && row.actual > prevAmt * 1.15) {
+        const diff = row.actual - prevAmt;
+        const pct = ((diff / prevAmt) * 100).toFixed(1);
+        insights.push({
+          title: `${row.category.icon} ${row.category.name} Spending Up +${pct}%`,
+          badge: 'MoM Increase',
+          summary: `You spent ${this.formatMoney(row.actual, curr)} in ${month} compared to ${this.formatMoney(prevAmt, curr)} in ${prevMonth}.`,
+          formula: `(${this.formatMoney(row.actual, curr)} − ${this.formatMoney(prevAmt, curr)}) ÷ ${this.formatMoney(prevAmt, curr)} = +${pct}%.`
+        });
+      }
+    });
+
+    el.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <h3 class="font-bold text-base">Rule-Based Financial Intelligence (${month})</h3>
+        <p class="text-xs text-slate-400">100% local deterministic calculations — every insight displays the exact formula behind it.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ${insights.map(ins => `
+          <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-2">
+            <div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-400">${ins.badge}</span>
+              <h4 class="font-bold text-sm sm:text-base mt-1.5">${ins.title}</h4>
+              <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">${ins.summary}</p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 text-[11px] text-slate-400 font-mono">📐 ${ins.formula}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  },
+
+  renderReports(el) {
+    const curr = this.state.settings.reportCurrency;
+    const month = this.state.settings.selectedMonth;
+    const fromDefault = this._reportFrom || `${month.slice(0, 4)}-01-01`;
+    const toDefault = this._reportTo || `${month}-31`;
+    const m = this.getPeriodMetrics({ from: fromDefault, to: toDefault }, curr);
+
+    el.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 no-print">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="font-semibold">Date Range:</span>
+          <input type="date" value="${fromDefault}" onchange="App._reportFrom=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 rounded-lg px-2.5 py-1.5 border border-slate-300 dark:border-slate-700" />
+          <span>to</span>
+          <input type="date" value="${toDefault}" onchange="App._reportTo=this.value; App.render()" class="bg-slate-100 dark:bg-slate-800 rounded-lg px-2.5 py-1.5 border border-slate-300 dark:border-slate-700" />
+        </div>
+        <div class="flex gap-2 text-xs">
+          <button onclick="App.exportTransactions('xlsx')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-semibold">📊 Export Excel</button>
+          <button onclick="window.print()" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-semibold">🖨️ Print Summary</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 print-card">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400">Report Period Income</div>
+          <div class="text-xl font-bold text-emerald-500 mt-1">${this.formatMoney(m.income, curr)}</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400">Net Expenses</div>
+          <div class="text-xl font-bold text-rose-500 mt-1">${this.formatMoney(m.netExpense, curr)}</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400">Net Cash Flow</div>
+          <div class="text-xl font-bold ${m.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'} mt-1">${this.formatMoney(m.netCashFlow, curr)}</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="text-xs text-slate-400">Excluded Internal Transfers</div>
+          <div class="text-xl font-bold text-indigo-400 mt-1">${this.formatMoney(m.transfersVolume, curr)}</div>
+        </div>
+      </div>
+    `;
+  },
+
+  openFxModal() {
+    this.openModal(`
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+        <h3 class="font-bold text-base">USD ⇄ KHR Exchange Rate Management</h3>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <label class="block text-xs text-slate-400 mb-1">Active Exchange Rate (1 USD = ? KHR)</label>
+        <input id="fx-input-rate" type="number" value="${this.state.settings.fxRateKHR}" class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl p-2.5 font-bold border border-slate-300 dark:border-slate-700" />
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+        <button onclick="App.closeModal()" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-sm">Cancel</button>
+        <button onclick="App.saveFxRate()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Save Rate</button>
+      </div>
+    `);
+  },
+
+  saveFxRate() {
+    const rate = Number(document.getElementById('fx-input-rate').value);
+    if (!rate || rate < 100) return this.toast('Enter a valid KHR exchange rate');
+    this.state.settings.fxRateKHR = rate;
+    this.saveState();
+    this.updateFxLabel();
+    this.closeModal();
+    this.toast(`Exchange rate updated: 1 USD = ${rate.toLocaleString()} KHR`);
+    this.render();
+  },
+
+  renderBackup(el) {
+    el.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <h3 class="font-bold text-base">1. Full JSON Backup & Excel Export</h3>
+          <p class="text-xs text-slate-400">Download all accounts, USD/KHR transactions, budgets, and savings goals into a single backup file.</p>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="App.downloadJsonBackup()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold">⬇️ Download Full JSON Backup</button>
+            <button onclick="App.exportTransactions('xlsx')" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold">📊 Export Ledger (.xlsx)</button>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <h3 class="font-bold text-base">2. Restore JSON Backup</h3>
+          <p class="text-xs text-slate-400">Upload a previously saved JSON backup file to restore or merge your records.</p>
+          <input type="file" accept=".json" onchange="App.handleJsonRestore(event)"
+            class="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white" />
+        </div>
+      </div>
+    `;
+  },
+
+  exportTransactions(format = 'csv') {
+    if (typeof XLSX === 'undefined') return this.toast('Spreadsheet library still loading');
+    const rows = this.state.transactions.map(t => ({
+      ID: t.id, Date: t.date, Type: t.type, Description: t.description,
+      Amount: t.amount, Currency: t.currency, FX_Rate: t.fxRateUsed || this.state.settings.fxRateKHR
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+    XLSX.writeFile(wb, `MyMoney_Pro_Ledger_${new Date().toISOString().slice(0, 10)}.${format}`);
+  },
+
+  downloadJsonBackup() {
+    const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `MyMoneyPro_Backup_v2_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    this.toast('Full JSON backup downloaded');
+  },
+
+  handleJsonRestore(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!parsed || !Array.isArray(parsed.transactions)) return this.toast('Invalid backup file');
+        this.state = parsed;
+        this.saveState();
+        this.render();
+        this.toast('Backup restored successfully');
+      } catch (err) {
+        this.toast('Restore failed: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+};
+
+window.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
