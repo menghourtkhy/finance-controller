@@ -1,0 +1,19 @@
+{
+  "name": "MyMoney Pro — Personal Finance",
+  "short_name": "MyMoney Pro",
+  "description": "Private Personal Financial Management & Wealth Tracker",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
