@@ -1,2209 +1,559 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#090d16" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>MyMoney — Personal Finance</title>
-
-  <link rel="manifest" href="manifest.json" />
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
-  </script>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    if (window.tailwind) {
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe',
-                400: '#818cf8', 500: '#6366f1', 600: '#4f46e5',
-                700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b'
-              },
-              surface: {
-                light: '#f8fafc',
-                cardLight: '#ffffff',
-                dark: '#090d16',
-                cardDark: '#111827',
-                elevatedDark: '#1e293b'
-              }
-            }
-          }
-        }
-      };
-    }
-  </script>
-
-  <!-- Chart.js & SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0f19" />
+  <title>MyMoney Pro v3.0</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
     :root {
-      --bg-main: #f4f6fb;
-      --bg-card: #ffffff;
-      --bg-elevated: #f1f5f9;
-      --text-primary: #0f172a;
-      --text-secondary: #475569;
-      --text-muted: #94a3b8;
-      --border-color: #e2e8f0;
-      --brand-primary: #4f46e5;
-      --brand-accent: #6366f1;
-      --ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --card-alt: #1c2640;
+      --border: #263354;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --green: #10b981;
+      --red: #f43f5e;
+      --amber: #f59e0b;
+      --cyan: #06b6d4;
     }
-
-    html.dark {
-      --bg-main: #090d16;
-      --bg-card: #111827;
-      --bg-elevated: #1e293b;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --border-color: #1f2937;
-      --brand-primary: #6366f1;
-      --brand-accent: #818cf8;
+    body.light {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --card-alt: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
     }
-
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-main);
-      color: var(--text-primary);
       margin: 0;
-      overflow-x: hidden;
-      transition: background-color 200ms ease, color 200ms ease;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 84px;
     }
-
-    .tabular-nums { font-variant-numeric: tabular-nums; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* Fintech Surface Cards */
-    .fin-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 1.125rem;
-      transition: transform 140ms var(--ease-out-quart), border-color 180ms ease, box-shadow 180ms ease;
+    header {
+      position: sticky; top: 0; z-index: 30;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
     }
-    .fin-card-interactive { cursor: pointer; }
-    .fin-card-interactive:active { transform: scale(0.985); }
-
-    /* Restrained Hero Gradient */
-    .hero-balance-card {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #1e293b 100%);
-      color: #ffffff;
-      border: 1px solid rgba(129, 140, 248, 0.24);
-      box-shadow: 0 16px 36px -12px rgba(30, 27, 75, 0.45);
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 18px; color: #fff;
     }
-
-    /* Smooth Sheet & Modal Animations */
-    @keyframes sheetSlideUp {
-      from { opacity: 0; transform: translateY(28px) scale(0.99); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+    .controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    input, select, button {
+      font-family: inherit; font-size: 13px;
+      color: var(--text); background: var(--card-alt);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 10px; outline: none;
     }
-    @keyframes fadeInView {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    button { cursor: pointer; font-weight: 600; }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .btn-green { background: var(--green); border-color: var(--green); color: #fff; }
+    .btn-red { background: rgba(244,63,94,0.18); border-color: var(--red); color: var(--red); }
+    .container { max-width: 980px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 14px;
     }
-    .animate-sheet { animation: sheetSlideUp 260ms var(--ease-out-quart) forwards; }
-    .animate-view { animation: fadeInView 200ms var(--ease-out-quart) forwards; }
-
-    /* Safe Area Support for Android Gesture Bars */
-    .pb-safe { padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px)); }
-    .bottom-nav-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
-
-    /* Press Feedback */
-    .btn-press { transition: transform 120ms var(--ease-out-quart), background-color 150ms ease, opacity 150ms ease; }
-    .btn-press:active { transform: scale(0.96); }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, ::before, ::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
+    .kpi-title { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .kpi-val { font-size: 19px; font-weight: 800; }
+    .text-green { color: var(--green); }
+    .text-red { color: var(--red); }
+    .text-amber { color: var(--amber); }
+    .text-muted { color: var(--muted); font-size: 12px; }
+    .progress-track { width: 100%; height: 9px; background: var(--card-alt); border-radius: 99px; overflow: hidden; margin: 8px 0; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.25s; }
+    .row-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
     }
-
-    @media print {
-      .no-print { display: none !important; }
-      body { background: #fff !important; color: #000 !important; }
-      .fin-card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; }
+    .row-item:last-child { border-bottom: none; }
+    .badge {
+      display: inline-block; padding: 2px 7px; border-radius: 6px;
+      font-size: 10px; font-weight: 700; background: var(--card-alt); color: var(--muted);
     }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+      background: var(--card); border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: repeat(6, 1fr); padding: 4px 2px;
+    }
+    .nav-btn {
+      background: transparent; border: none; padding: 6px 2px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 10px; color: var(--muted); border-radius: 8px;
+    }
+    .nav-btn.active { color: var(--primary); font-weight: 700; }
+    .fab {
+      position: fixed; right: 16px; bottom: 72px; z-index: 45;
+      width: 54px; height: 54px; border-radius: 18px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff; font-size: 26px; font-weight: 700;
+      border: none; box-shadow: 0 8px 24px rgba(99,102,241,0.45);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(0,0,0,0.75);
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--card); border: 1px solid var(--border);
+      width: 100%; max-width: 560px; max-height: 90vh;
+      border-radius: 20px 20px 0 0; padding: 16px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .chip { white-space: nowrap; font-size: 12px; padding: 6px 10px; border-radius: 99px; background: var(--card-alt); }
   </style>
 </head>
-<body class="min-h-screen flex flex-col md:flex-row selection:bg-brand-500 selection:text-white">
+<body>
 
-  <!-- DESKTOP SIDEBAR NAVIGATION -->
-  <aside class="hidden md:flex md:flex-col md:w-64 lg:w-72 bg-white dark:bg-[#0d1321] border-r border-slate-200/80 dark:border-slate-800/80 shrink-0 sticky top-0 h-screen no-print">
-    <div class="p-5 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-md shadow-brand-600/25" id="sidebar-brand-icon"></div>
-        <div>
-          <span class="font-extrabold text-base tracking-tight block leading-none">MyMoney</span>
-          <span class="text-[11px] text-slate-400 font-medium mt-1 block">Personal Wealth OS</span>
-        </div>
+  <!-- TOP HEADER -->
+  <header>
+    <div class="brand">
+      <div class="logo">M</div>
+      <div>
+        <div style="font-weight:800; font-size:15px;">MyMoney Pro <span class="badge" style="color:#10b981;">v3.0</span></div>
+        <div class="text-muted" id="header-sub">● Reconciled • Offline Ready</div>
       </div>
-      <button onclick="App.cycleTheme()" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 btn-press" title="Switch Theme" id="desktop-theme-btn"></button>
     </div>
-
-    <div class="px-4 mb-3">
-      <button onclick="App.openTxSheet()" class="w-full py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm shadow-md shadow-brand-600/20 flex items-center justify-center gap-2 btn-press">
-        <span id="sidebar-add-icon"></span>
-        <span>Add Transaction</span>
-      </button>
+    <div class="controls">
+      <input type="month" id="ctrl-month" onchange="App.setMonth(this.value)" />
+      <select id="ctrl-curr" onchange="App.setCurrency(this.value)">
+        <option value="USD">USD ($)</option>
+        <option value="KHR">KHR (៛)</option>
+      </select>
+      <button onclick="App.toggleTheme()" id="btn-theme">☀️</button>
     </div>
+  </header>
 
-    <nav id="desktop-nav" class="flex-1 px-3 space-y-1 overflow-y-auto text-sm font-medium"></nav>
+  <!-- MAIN VIEW -->
+  <main class="container" id="main-view"></main>
 
-    <!-- Quick Sub-Modules -->
-    <div class="px-4 py-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-1">
-      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-1">Financial Tools</div>
-      <button onclick="App.openSubView('accounts')" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition">
-        <span>Accounts & Net Worth</span>
-        <span class="text-slate-400">→</span>
-      </button>
-      <button onclick="App.openSubView('goals')" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition">
-        <span>Savings Goals</span>
-        <span class="text-slate-400">→</span>
-      </button>
-      <button onclick="App.openSubView('calendar')" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition">
-        <span>Bills & Recurring</span>
-        <span class="text-slate-400">→</span>
-      </button>
-    </div>
+  <!-- FLOATING QUICK ADD BUTTON -->
+  <button class="fab" onclick="App.openTxModal()" title="Add Transaction">+</button>
 
-    <!-- FX Rate Footer -->
-    <div class="p-4 border-t border-slate-200/80 dark:border-slate-800/80">
-      <button onclick="App.openFxSheet()" class="w-full p-3 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 hover:bg-slate-200/70 dark:hover:bg-slate-800 flex items-center justify-between text-xs transition">
-        <span class="text-slate-500 dark:text-slate-400 font-medium">Exchange Rate</span>
-        <span class="font-bold text-brand-600 dark:text-brand-400 tabular-nums" id="sidebar-fx-badge">1 USD = 4,050 ៛</span>
-      </button>
-    </div>
-  </aside>
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav" id="bottom-nav"></nav>
 
-  <!-- MAIN APPLICATION AREA -->
-  <div class="flex-1 flex flex-col min-w-0 pb-safe md:pb-8">
-    <!-- COMPACT STICKY TOP HEADER -->
-    <header class="sticky top-0 z-30 bg-[#f4f6fb]/85 dark:bg-[#090d16]/85 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/80 px-4 sm:px-6 py-3 flex items-center justify-between gap-2 no-print">
-      <div class="flex items-center gap-2.5 min-w-0">
-        <div class="md:hidden w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-sm shrink-0" id="mobile-brand-icon"></div>
-        <div class="min-w-0">
-          <div id="header-greeting" class="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">Good morning</div>
-          <h1 id="header-title" class="font-bold text-sm sm:text-base tracking-tight truncate">MyMoney</h1>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <!-- Month Selector Button -->
-        <button onclick="App.openMonthSelectorSheet()" class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-xs font-semibold flex items-center gap-1.5 shadow-2xs btn-press">
-          <span id="header-cal-icon" class="text-brand-500"></span>
-          <span id="header-month-label" class="tabular-nums">Oct 2026</span>
-        </button>
-
-        <!-- Currency Toggle Pill -->
-        <button onclick="App.toggleReportCurrency()" id="header-curr-btn"
-          class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-xs font-bold text-brand-600 dark:text-brand-400 tabular-nums btn-press"
-          title="Switch Reporting Currency">
-          USD ($)
-        </button>
-
-        <!-- Due Bills / Reminder Bell -->
-        <button onclick="App.openSubView('calendar')" id="header-bell-btn"
-          class="relative p-2 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 btn-press"
-          title="Upcoming Bills & Reminders">
-          <span id="header-bell-icon"></span>
-          <span id="header-bell-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- VIEWPORT CONTAINER -->
-    <main id="app-view" class="flex-1 px-4 sm:px-6 pt-4 max-w-6xl w-full mx-auto space-y-5 animate-view"></main>
-  </div>
-
-  <!-- MOBILE FLOATING ACTION BUTTON (THUMB ZONE) -->
-  <button onclick="App.openTxSheet()" aria-label="Add Transaction"
-    class="md:hidden fixed right-4 bottom-20 z-30 w-14 h-14 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white shadow-xl shadow-brand-600/35 flex items-center justify-center btn-press no-print"
-    id="mobile-fab-btn">
-  </button>
-
-  <!-- MOBILE BOTTOM NAVIGATION BAR (5 PRIMARY DESTINATIONS) -->
-  <nav id="mobile-nav" aria-label="Primary Navigation"
-    class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-[#0d1321]/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 grid grid-cols-5 bottom-nav-safe no-print">
-  </nav>
-
-  <!-- PRIMARY SHEET / MODAL LAYER -->
-  <div id="sheet-backdrop" onclick="if(event.target===this) App.closeSheet()"
-    class="fixed inset-0 z-40 hidden bg-slate-950/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity no-print">
-    <div id="sheet-panel"
-      class="bg-white dark:bg-[#111827] border-t sm:border border-slate-200/80 dark:border-slate-800 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90dvh] flex flex-col shadow-2xl overflow-hidden animate-sheet">
-    </div>
-  </div>
-
-  <!-- SECONDARY PICKER / CONFIRMATION SHEET LAYER (STACKABLE FOR CATEGORY/ACCOUNT/DATE SELECTORS) -->
-  <div id="subsheet-backdrop" onclick="if(event.target===this) App.closeSubSheet()"
-    class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4 no-print">
-    <div id="subsheet-panel"
-      class="bg-white dark:bg-[#111827] border-t sm:border border-slate-200/80 dark:border-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[85dvh] flex flex-col shadow-2xl overflow-hidden animate-sheet">
-    </div>
-  </div>
-
-  <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toast-container" aria-live="polite"
-    class="fixed top-16 sm:top-5 right-4 left-4 sm:left-auto sm:w-88 z-50 flex flex-col gap-2 pointer-events-none no-print">
+  <!-- MODAL -->
+  <div class="modal-backdrop" id="modal" onclick="if(event.target===this)App.closeModal()">
+    <div class="modal-box" id="modal-body"></div>
   </div>
 
 <script>
-/**
- * ============================================================================
- * VECTOR ICON SYSTEM (Lucide-Compatible Inline SVG Engine — 100% Offline Safe)
- * ============================================================================
- */
-const ICONS = {
-  wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
-  home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
-  list: '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
-  pie: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
-  barChart: '<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>',
-  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
-  plus: '<line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/>',
-  close: '<line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/>',
-  eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
-  eyeOff: '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>',
-  arrowUpRight: '<line x1="7" x2="17" y1="17" y2="7"/><polyline points="7 7 17 7 17 17"/>',
-  arrowDownLeft: '<line x1="17" x2="7" y1="7" y2="17"/><polyline points="17 17 7 17 7 7"/>',
-  repeat: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
-  calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
-  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
-  search: '<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/>',
-  filter: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
-  check: '<polyline points="20 6 9 17 4 12"/>',
-  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>',
-  info: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/>',
-  trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
-  copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
-  edit: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
-  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
-  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
-  chevronRight: '<polyline points="9 18 15 12 9 6"/>',
-  chevronDown: '<polyline points="6 9 12 15 18 9"/>',
-  sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
-  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
-  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
-  landmark: '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
-  creditCard: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
-  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
-  briefcase: '<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
-  utensils: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
-  shoppingBag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
-  zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
-  car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
-  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
-  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
-  sparkles: '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>'
-};
-
-function Icon(name, size = 18, extraClass = '') {
-  const paths = ICONS[name] || ICONS.wallet;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block shrink-0 ${extraClass}">${paths}</svg>`;
+// Clear any stuck old service workers immediately
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
 }
 
-/**
- * ============================================================================
- * DATABASE & DEFAULT CONFIGURATION (100% Backwards-Compatible with v2.0)
- * ============================================================================
- */
-const DB_NAME = 'MyMoneyProDB_v2';
-const DB_STORE = 'app_state';
-const STORAGE_KEY = 'mymoney_pro_state_v2';
+const STORAGE_KEY = 'mymoney_pro_v3_state';
 
-const DEFAULT_CATEGORIES = [
-  { id: 'cat_salary', name: 'Salary & Payroll', type: 'income', iconName: 'briefcase', color: '#10b981' },
-  { id: 'cat_freelance', name: 'Side Business / Bonus', type: 'income', iconName: 'sparkles', color: '#059669' },
-  { id: 'cat_invest_inc', name: 'Interest & Dividends', type: 'income', iconName: 'barChart', color: '#34d399' },
-  { id: 'cat_food', name: 'Food & Dining', type: 'expense', iconName: 'utensils', color: '#f59e0b' },
-  { id: 'cat_groceries', name: 'Groceries & Market', type: 'expense', iconName: 'shoppingBag', color: '#84cc16' },
-  { id: 'cat_housing', name: 'Rent & Housing', type: 'expense', iconName: 'home', color: '#6366f1' },
-  { id: 'cat_utilities', name: 'EDC, PPWSA & Internet', type: 'expense', iconName: 'zap', color: '#06b6d4' },
-  { id: 'cat_transport', name: 'Fuel, Grab & Transport', type: 'expense', iconName: 'car', color: '#ec4899' },
-  { id: 'cat_shopping', name: 'Shopping & Household', type: 'expense', iconName: 'shoppingBag', color: '#8b5cf6' },
-  { id: 'cat_health', name: 'Healthcare & Pharmacy', type: 'expense', iconName: 'heart', color: '#ef4444' },
-  { id: 'cat_education', name: 'Courses & Subscriptions', type: 'expense', iconName: 'book', color: '#3b82f6' },
-  { id: 'cat_family', name: 'Family & Personal Care', type: 'expense', iconName: 'heart', color: '#f43f5e' },
-  { id: 'cat_adjust', name: 'Reconciliation Adjustment', type: 'both', iconName: 'sliders', color: '#64748b' }
+const CATEGORIES = [
+  { id: 'cat_salary', name: 'Salary & Payroll', type: 'income', icon: '💼', color: '#10b981' },
+  { id: 'cat_bonus', name: 'Side Income / Bonus', type: 'income', icon: '🚀', color: '#34d399' },
+  { id: 'cat_food', name: 'Food & Dining', type: 'expense', icon: '🍜', color: '#f59e0b' },
+  { id: 'cat_groceries', name: 'Groceries & Market', type: 'expense', icon: '🛒', color: '#84cc16' },
+  { id: 'cat_housing', name: 'Rent & Housing', type: 'expense', icon: '🏠', color: '#6366f1' },
+  { id: 'cat_utilities', name: 'EDC, PPWSA & Internet', type: 'expense', icon: '⚡', color: '#06b6d4' },
+  { id: 'cat_transport', name: 'Fuel, Grab & Transport', type: 'expense', icon: '🛵', color: '#ec4899' },
+  { id: 'cat_shopping', name: 'Shopping & Household', type: 'expense', icon: '🛍️', color: '#8b5cf6' },
+  { id: 'cat_health', name: 'Health & Pharmacy', type: 'expense', icon: '🏥', color: '#ef4444' },
+  { id: 'cat_edu', name: 'Courses & Subscriptions', type: 'expense', icon: '🎓', color: '#3b82f6' },
+  { id: 'cat_adjust', name: 'Balance Adjustment', type: 'both', icon: '⚖️', color: '#64748b' }
 ];
 
-// 5 Primary Navigation Destinations as required by Section 4
-const PRIMARY_NAV = [
-  { id: 'home', label: 'Home', icon: 'home' },
-  { id: 'transactions', label: 'Transactions', icon: 'list' },
-  { id: 'budget', label: 'Budget', icon: 'pie' },
-  { id: 'reports', label: 'Reports', icon: 'barChart' },
-  { id: 'settings', label: 'Settings', icon: 'settings' }
+const TABS = [
+  { id: 'dashboard', label: 'Home', icon: '📊' },
+  { id: 'transactions', label: 'Ledger', icon: '🧾' },
+  { id: 'budgets', label: 'Budget', icon: '🎯' },
+  { id: 'accounts', label: 'Accounts', icon: '🏦' },
+  { id: 'goals', label: 'Goals', icon: '🏆' },
+  { id: 'more', label: 'More', icon: '⚙️' }
 ];
 
 const App = {
   state: null,
-  activeTab: 'home',
-  subView: null, // 'accounts' | 'goals' | 'calendar' | 'import'
-  charts: {},
-  txFilter: { search: '', accountId: 'ALL', categoryId: 'ALL', type: 'ALL', currency: 'ALL', minAmt: '', maxAmt: '', dateFrom: '', dateTo: '', sort: 'date_desc' },
-  budgetViewMode: 'monthly', // 'monthly' | 'annual'
-  reportRange: '6m', // '1m' | '3m' | '6m' | '1y'
-  importWizard: { step: 1, fileName: '', headers: [], rawRows: [], stagedRows: [], mapping: {}, summary: null },
+  tab: 'dashboard',
+  filter: { q: '', type: 'ALL', acc: 'ALL' },
 
-  getFreshState() {
-    const currentMonth = new Date().toISOString().slice(0, 7);
+  defaultState() {
+    const m = new Date().toISOString().slice(0, 7);
     return {
-      schemaVersion: '2.1',
-      updatedAt: new Date().toISOString(),
-      settings: {
-        reportCurrency: 'USD',
-        fxRateKHR: 4050,
-        fxHistory: [{ date: new Date().toISOString().slice(0, 10), rate: 4050 }],
-        selectedMonth: currentMonth,
-        theme: 'dark', // 'light' | 'dark' | 'system'
-        hideBalance: false,
-        dashboardWidgets: {
-          incomeExpenseRow: true,
-          budgetProgress: true,
-          spendingAnalytics: true,
-          accountsGoalsStrip: true,
-          recentTransactions: true
-        },
-        categoryRules: [
-          { keyword: 'edc', categoryId: 'cat_utilities' },
-          { keyword: 'ppwsa', categoryId: 'cat_utilities' },
-          { keyword: 'grab', categoryId: 'cat_transport' },
-          { keyword: 'passapp', categoryId: 'cat_transport' },
-          { keyword: 'aeon', categoryId: 'cat_groceries' },
-          { keyword: 'lucky', categoryId: 'cat_groceries' },
-          { keyword: 'udemy', categoryId: 'cat_education' },
-          { keyword: 'salary', categoryId: 'cat_salary' }
-        ]
-      },
-      categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+      month: m,
+      currency: 'USD',
+      fxRate: 4050,
+      theme: 'dark',
       accounts: [
-        { id: 'acc_aba_usd', name: 'ABA Bank', type: 'bank', currency: 'USD', openingBalance: 1850, isLiability: false },
-        { id: 'acc_bakong_khr', name: 'Bakong KHQR', type: 'ewallet', currency: 'KHR', openingBalance: 1620000, isLiability: false },
-        { id: 'acc_cash_usd', name: 'Cash Wallet', type: 'cash', currency: 'USD', openingBalance: 150, isLiability: false },
-        { id: 'acc_save_usd', name: 'High-Yield Savings', type: 'savings', currency: 'USD', openingBalance: 3200, isLiability: false },
-        { id: 'acc_cc_usd', name: 'Visa Credit Card', type: 'credit', currency: 'USD', openingBalance: -240, isLiability: true }
+        { id: 'acc_aba', name: 'ABA Bank (USD)', type: 'bank', currency: 'USD', opening: 1850, isDebt: false },
+        { id: 'acc_khr', name: 'Bakong / KHQR (KHR)', type: 'ewallet', currency: 'KHR', opening: 1620000, isDebt: false },
+        { id: 'acc_cash', name: 'Wallet Cash (USD)', type: 'cash', currency: 'USD', opening: 150, isDebt: false },
+        { id: 'acc_save', name: 'Savings Account (USD)', type: 'savings', currency: 'USD', opening: 3200, isDebt: false },
+        { id: 'acc_cc', name: 'Visa Credit Card', type: 'credit', currency: 'USD', opening: -240, isDebt: true }
       ],
-      transactions: [],
-      templates: [],
-      budgets: {},
+      transactions: [
+        { id: 't1', date: m + '-01', type: 'income', desc: 'Monthly Salary', amount: 1650, currency: 'USD', fx: 4050, accountId: 'acc_aba', categoryId: 'cat_salary', notes: 'Payroll' },
+        { id: 't2', date: m + '-03', type: 'income', desc: 'Consulting & Automation Project', amount: 250, currency: 'USD', fx: 4050, accountId: 'acc_aba', categoryId: 'cat_bonus', notes: '' },
+        { id: 't3', date: m + '-05', type: 'expense', desc: 'Apartment Rent', amount: 350, currency: 'USD', fx: 4050, accountId: 'acc_aba', categoryId: 'cat_housing', notes: '' },
+        { id: 't4', date: m + '-07', type: 'expense', desc: 'Aeon Supermarket Groceries', amount: 96, currency: 'USD', fx: 4050, accountId: 'acc_cc', categoryId: 'cat_groceries', notes: '' },
+        { id: 't5', date: m + '-09', type: 'expense', desc: 'Lunches & Coffee (KHQR)', amount: 460000, currency: 'KHR', fx: 4050, accountId: 'acc_khr', categoryId: 'cat_food', notes: '' },
+        { id: 't6', date: m + '-11', type: 'expense', desc: 'EDC Electricity & PPWSA Water', amount: 215000, currency: 'KHR', fx: 4050, accountId: 'acc_khr', categoryId: 'cat_utilities', notes: '' },
+        { id: 't7', date: m + '-12', type: 'expense', desc: 'Online Course Bundle', amount: 40, currency: 'USD', fx: 4050, accountId: 'acc_cc', categoryId: 'cat_edu', notes: '' },
+        { id: 't8', date: m + '-13', type: 'refund', desc: 'Course Discount Refund', amount: 10, currency: 'USD', fx: 4050, accountId: 'acc_cc', categoryId: 'cat_edu', notes: 'Offsets education expense' },
+        { id: 't9', date: m + '-14', type: 'transfer', desc: 'Emergency Fund Transfer', amount: 300, currency: 'USD', fx: 4050, accountId: 'acc_aba', toAccountId: 'acc_save', categoryId: 'cat_adjust', notes: 'Internal transfer' },
+        { id: 't10', date: m + '-15', type: 'transfer', desc: 'Credit Card Bill Paydown', amount: 150, currency: 'USD', fx: 4050, accountId: 'acc_aba', toAccountId: 'acc_cc', categoryId: 'cat_adjust', notes: 'Liability payment' }
+      ],
+      budgets: {
+        [m]: {
+          overallUSD: 1100,
+          rollover: false,
+          cats: { cat_housing: 350, cat_food: 180, cat_groceries: 150, cat_utilities: 90, cat_transport: 80, cat_shopping: 100, cat_health: 50, cat_edu: 60 }
+        }
+      },
       goals: [
-        { id: 'goal_efund', name: 'Emergency Fund (6 Months)', targetAmount: 6000, currentAmount: 3200, currency: 'USD', targetDate: '2027-06-30', monthlyTarget: 300, isEmergencyFund: true },
-        { id: 'goal_laptop', name: 'Workstation Upgrade', targetAmount: 1400, currentAmount: 450, currency: 'USD', targetDate: '2027-03-31', monthlyTarget: 150, isEmergencyFund: false }
+        { id: 'g1', name: '6-Month Emergency Fund', target: 6000, current: 3500, monthly: 300, date: '2027-06-30' },
+        { id: 'g2', name: 'New Workstation Fund', target: 1500, current: 550, monthly: 150, date: '2027-03-31' }
       ],
       recurring: [
-        { id: 'rec_salary', description: 'Monthly Net Salary', type: 'income', amount: 1650, currency: 'USD', accountId: 'acc_aba_usd', categoryId: 'cat_salary', frequency: 'monthly', dayOfMonth: 28, active: true, lastGeneratedPeriod: '' },
-        { id: 'rec_rent', description: 'Apartment Rent', type: 'expense', amount: 350, currency: 'USD', accountId: 'acc_aba_usd', categoryId: 'cat_housing', frequency: 'monthly', dayOfMonth: 5, active: true, lastGeneratedPeriod: '' },
-        { id: 'rec_edc', description: 'EDC Electricity Bill', type: 'expense', amount: 185000, currency: 'KHR', accountId: 'acc_bakong_khr', categoryId: 'cat_utilities', frequency: 'monthly', dayOfMonth: 12, active: true, lastGeneratedPeriod: '' },
-        { id: 'rec_ppwsa', description: 'PPWSA Water Supply', type: 'expense', amount: 28000, currency: 'KHR', accountId: 'acc_bakong_khr', categoryId: 'cat_utilities', frequency: 'monthly', dayOfMonth: 14, active: true, lastGeneratedPeriod: '' }
-      ],
-      netWorthSnapshots: []
+        { id: 'r1', desc: 'Monthly Salary', type: 'income', amount: 1650, currency: 'USD', day: 28, accountId: 'acc_aba', categoryId: 'cat_salary', lastPosted: '' },
+        { id: 'r2', desc: 'Apartment Rent', type: 'expense', amount: 350, currency: 'USD', day: 5, accountId: 'acc_aba', categoryId: 'cat_housing', lastPosted: m },
+        { id: 'r3', desc: 'EDC Electricity Bill', type: 'expense', amount: 185000, currency: 'KHR', day: 12, accountId: 'acc_khr', categoryId: 'cat_utilities', lastPosted: '' },
+        { id: 'r4', desc: 'PPWSA Water Bill', type: 'expense', amount: 28000, currency: 'KHR', day: 14, accountId: 'acc_khr', categoryId: 'cat_utilities', lastPosted: '' }
+      ]
     };
   },
 
-  async init() {
-    await this.loadState();
-    this.normalizeLegacyState();
-    this.initStaticIcons();
-    this.applyTheme();
-    this.updateHeaderBar();
-    this.renderNavigation();
+  init() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      this.state = raw ? JSON.parse(raw) : this.defaultState();
+      if (!this.state || !Array.isArray(this.state.accounts)) this.state = this.defaultState();
+    } catch (e) {
+      this.state = this.defaultState();
+    }
+    document.getElementById('ctrl-month').value = this.state.month;
+    document.getElementById('ctrl-curr').value = this.state.currency;
+    document.body.classList.toggle('light', this.state.theme === 'light');
+    this.renderNav();
     this.render();
   },
 
-  normalizeLegacyState() {
-    if (!this.state || typeof this.state !== 'object') {
-      this.state = this.getFreshState();
-    }
-    const fresh = this.getFreshState();
-    this.state.settings = { ...fresh.settings, ...(this.state.settings || {}) };
-    this.state.settings.dashboardWidgets = { ...fresh.settings.dashboardWidgets, ...(this.state.settings.dashboardWidgets || {}) };
-    if (!Array.isArray(this.state.categories) || !this.state.categories.length) {
-      this.state.categories = fresh.categories;
-    } else {
-      // Ensure every category has a vector iconName
-      this.state.categories.forEach(c => {
-        if (!c.iconName) {
-          const def = DEFAULT_CATEGORIES.find(d => d.id === c.id);
-          c.iconName = def ? def.iconName : (c.type === 'income' ? 'briefcase' : 'shoppingBag');
-        }
-      });
-    }
-    if (!Array.isArray(this.state.accounts)) this.state.accounts = fresh.accounts;
-    if (!Array.isArray(this.state.transactions)) this.state.transactions = [];
-    if (!this.state.budgets) this.state.budgets = {};
-    if (!Array.isArray(this.state.goals)) this.state.goals = fresh.goals;
-    if (!Array.isArray(this.state.recurring)) this.state.recurring = fresh.recurring;
+  save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state)); } catch (e) {}
   },
 
-  initStaticIcons() {
-    const sBrand = document.getElementById('sidebar-brand-icon');
-    if (sBrand) sBrand.innerHTML = Icon('wallet', 20);
-    const mBrand = document.getElementById('mobile-brand-icon');
-    if (mBrand) mBrand.innerHTML = Icon('wallet', 16);
-    const sAdd = document.getElementById('sidebar-add-icon');
-    if (sAdd) sAdd.innerHTML = Icon('plus', 18);
-    const fab = document.getElementById('mobile-fab-btn');
-    if (fab) fab.innerHTML = Icon('plus', 24);
-    const cal = document.getElementById('header-cal-icon');
-    if (cal) cal.innerHTML = Icon('calendar', 14);
-    const bell = document.getElementById('header-bell-icon');
-    if (bell) bell.innerHTML = Icon('bell', 16);
+  conv(amt, from, to, rate) {
+    const n = Number(amt) || 0;
+    if (from === to) return n;
+    const fx = Number(rate) || this.state.fxRate || 4050;
+    return from === 'USD' ? Math.round(n * fx) : +(n / fx).toFixed(2);
   },
 
-  async loadState() {
-    try {
-      const localRaw = localStorage.getItem(STORAGE_KEY);
-      if (localRaw) {
-        this.state = JSON.parse(localRaw);
-        return;
-      }
-      const idbData = await this.readIndexedDB();
-      if (idbData) {
-        this.state = idbData;
-        return;
-      }
-    } catch (e) {
-      console.warn('Local state load fallback:', e);
-    }
-    this.state = this.getFreshState();
-    // Seed initial realistic sample transactions only on brand-new first install
-    if (!localStorage.getItem(STORAGE_KEY + '_initialized')) {
-      localStorage.setItem(STORAGE_KEY + '_initialized', '1');
-      this.seedSampleLedger(false);
-    }
+  fmt(amt, curr = this.state.currency) {
+    const n = Number(amt) || 0;
+    if (curr === 'KHR') return Math.round(n).toLocaleString('en-US') + ' ៛';
+    return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },
 
-  async saveState() {
-    this.state.updatedAt = new Date().toISOString();
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
-      await this.writeIndexedDB(this.state);
-    } catch (e) {
-      console.error('Save error:', e);
-    }
-  },
-
-  readIndexedDB() {
-    return new Promise((resolve) => {
-      try {
-        if (!window.indexedDB) return resolve(null);
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
-        };
-        req.onsuccess = (e) => {
-          const db = e.target.result;
-          const tx = db.transaction(DB_STORE, 'readonly');
-          const getReq = tx.objectStore(DB_STORE).get('root');
-          getReq.onsuccess = () => resolve(getReq.result || null);
-          getReq.onerror = () => resolve(null);
-        };
-        req.onerror = () => resolve(null);
-      } catch (_) { resolve(null); }
-    });
-  },
-
-  writeIndexedDB(data) {
-    return new Promise((resolve) => {
-      try {
-        if (!window.indexedDB) return resolve();
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
-        };
-        req.onsuccess = (e) => {
-          const db = e.target.result;
-          const tx = db.transaction(DB_STORE, 'readwrite');
-          tx.objectStore(DB_STORE).put(data, 'root');
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => resolve();
-        };
-        req.onerror = () => resolve();
-      } catch (_) { resolve(); }
-    });
-  },
-
-  // ============================================================================
-  // CURRENCY & FINANCIAL ENGINE (USD & KHR)
-  // ============================================================================
-  convertAmount(amount, fromCurr, toCurr, customRate) {
-    const num = Number(amount) || 0;
-    if (fromCurr === toCurr) return num;
-    const rate = Number(customRate) || this.state.settings.fxRateKHR || 4050;
-    if (fromCurr === 'USD' && toCurr === 'KHR') return Math.round(num * rate);
-    if (fromCurr === 'KHR' && toCurr === 'USD') return +(num / rate).toFixed(2);
-    return num;
-  },
-
-  formatMoney(amount, currency = this.state.settings.reportCurrency, allowPrivacyMask = false) {
-    if (allowPrivacyMask && this.state.settings.hideBalance) {
-      return currency === 'KHR' ? '•••••• ៛' : '$••••••';
-    }
-    const val = Number(amount) || 0;
-    const sign = val < 0 ? '-' : '';
-    if (currency === 'KHR') {
-      return sign + Math.round(Math.abs(val)).toLocaleString('en-US') + ' ៛';
-    }
-    return sign + '$' + Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  },
-
-  txInReportCurrency(tx, targetCurr = this.state.settings.reportCurrency) {
-    return this.convertAmount(tx.amount, tx.currency, targetCurr, tx.fxRateUsed || this.state.settings.fxRateKHR);
-  },
-
-  getAccountBalance(accountId) {
-    const acc = this.state.accounts.find(a => a.id === accountId);
+  getAccBalance(accId) {
+    const acc = this.state.accounts.find(a => a.id === accId);
     if (!acc) return 0;
-    let bal = Number(acc.openingBalance) || 0;
-    for (const tx of this.state.transactions) {
-      const rate = tx.fxRateUsed || this.state.settings.fxRateKHR;
-      if (tx.accountId === accountId) {
-        const amtInAcc = this.convertAmount(tx.amount, tx.currency, acc.currency, rate);
-        if (tx.type === 'income' || tx.type === 'refund') bal += amtInAcc;
-        else if (tx.type === 'expense' || tx.type === 'transfer') bal -= amtInAcc;
+    let bal = Number(acc.opening) || 0;
+    this.state.transactions.forEach(t => {
+      const fx = t.fx || this.state.fxRate;
+      if (t.accountId === accId) {
+        const v = this.conv(t.amount, t.currency, acc.currency, fx);
+        if (t.type === 'income' || t.type === 'refund') bal += v;
+        else bal -= v;
       }
-      if (tx.type === 'transfer' && tx.toAccountId === accountId) {
-        const recvAmt = tx.toAmount ? Number(tx.toAmount) : this.convertAmount(tx.amount, tx.currency, acc.currency, rate);
-        bal += recvAmt;
+      if (t.type === 'transfer' && t.toAccountId === accId) {
+        bal += this.conv(t.amount, t.currency, acc.currency, fx);
       }
-    }
+    });
     return acc.currency === 'KHR' ? Math.round(bal) : +bal.toFixed(2);
   },
 
-  getConsolidatedBalanceSummary(targetCurr = this.state.settings.reportCurrency) {
-    let availableAssets = 0;
-    let liabilities = 0;
-    let rawUSD = 0;
-    let rawKHR = 0;
-
-    for (const acc of this.state.accounts) {
-      const bal = this.getAccountBalance(acc.id);
-      const conv = this.convertAmount(bal, acc.currency, targetCurr, this.state.settings.fxRateKHR);
-      if (acc.isLiability || bal < 0) {
-        liabilities += Math.abs(conv);
-      } else {
-        availableAssets += conv;
-        if (acc.currency === 'USD') rawUSD += bal;
-        if (acc.currency === 'KHR') rawKHR += bal;
-      }
-    }
-    return {
-      availableAssets,
-      liabilities,
-      netWorth: availableAssets - liabilities,
-      rawUSD,
-      rawKHR
-    };
-  },
-
-  getPeriodMetrics(monthOrRange, targetCurr = this.state.settings.reportCurrency, filterOpts = {}) {
-    let income = 0;
-    let grossExpense = 0;
-    let refunds = 0;
-    let transfersVolume = 0;
-    const byCategory = {};
-
-    const txs = this.state.transactions.filter(tx => {
-      if (typeof monthOrRange === 'string') {
-        if (!tx.date.startsWith(monthOrRange)) return false;
-      } else if (monthOrRange && monthOrRange.from && monthOrRange.to) {
-        if (tx.date < monthOrRange.from || tx.date > monthOrRange.to) return false;
-      }
-      if (filterOpts.accountId && filterOpts.accountId !== 'ALL' && tx.accountId !== filterOpts.accountId && tx.toAccountId !== filterOpts.accountId) return false;
-      return true;
+  getMetrics(month = this.state.month) {
+    const curr = this.state.currency;
+    let income = 0, grossExp = 0, refunds = 0, transfers = 0;
+    const byCat = {};
+    this.state.transactions.filter(t => t.date.startsWith(month)).forEach(t => {
+      const v = this.conv(t.amount, t.currency, curr, t.fx);
+      if (t.type === 'transfer') { transfers += v; return; }
+      if (t.type === 'income') { income += v; byCat[t.categoryId] = (byCat[t.categoryId] || 0) + v; }
+      else if (t.type === 'expense') { grossExp += v; byCat[t.categoryId] = (byCat[t.categoryId] || 0) + v; }
+      else if (t.type === 'refund') { refunds += v; byCat[t.categoryId] = (byCat[t.categoryId] || 0) - v; }
     });
-
-    for (const tx of txs) {
-      const val = this.txInReportCurrency(tx, targetCurr);
-      if (tx.type === 'transfer') {
-        transfersVolume += val;
-        continue;
-      }
-      if (tx.type === 'income') {
-        if (tx.splits && tx.splits.length) {
-          tx.splits.forEach(s => {
-            const sv = this.convertAmount(s.amount, tx.currency, targetCurr, tx.fxRateUsed);
-            income += sv;
-            byCategory[s.categoryId] = (byCategory[s.categoryId] || 0) + sv;
-          });
-        } else {
-          income += val;
-          byCategory[tx.categoryId] = (byCategory[tx.categoryId] || 0) + val;
-        }
-      } else if (tx.type === 'expense') {
-        if (tx.splits && tx.splits.length) {
-          tx.splits.forEach(s => {
-            const sv = this.convertAmount(s.amount, tx.currency, targetCurr, tx.fxRateUsed);
-            grossExpense += sv;
-            byCategory[s.categoryId] = (byCategory[s.categoryId] || 0) + sv;
-          });
-        } else {
-          grossExpense += val;
-          byCategory[tx.categoryId] = (byCategory[tx.categoryId] || 0) + val;
-        }
-      } else if (tx.type === 'refund') {
-        refunds += val;
-        byCategory[tx.categoryId] = (byCategory[tx.categoryId] || 0) - val;
-      }
-    }
-
-    const netExpense = Math.max(0, grossExpense - refunds);
-    return { income, grossExpense, refunds, netExpense, netCashFlow: income - netExpense, transfersVolume, byCategory, txCount: txs.length };
-  },
-
-  getPreviousMonthStr(ym) {
-    const [y, m] = ym.split('-').map(Number);
-    const d = new Date(y, m - 2, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  },
-
-  formatMonthDisplay(ym) {
-    if (!ym) return '';
-    const [y, m] = ym.split('-').map(Number);
-    const d = new Date(y, m - 1, 1);
-    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-  },
-
-  getBudgetForMonth(month, targetCurr = this.state.settings.reportCurrency) {
-    if (!this.state.budgets[month]) {
-      this.state.budgets[month] = {
-        overallUSD: 1100,
-        savingsTargetUSD: 350,
-        rolloverEnabled: false,
-        categories: {
-          cat_food: 180, cat_groceries: 150, cat_housing: 350, cat_utilities: 90,
-          cat_transport: 75, cat_shopping: 100, cat_health: 50, cat_education: 55, cat_family: 50
-        }
-      };
-    }
-    const raw = this.state.budgets[month];
-    const metrics = this.getPeriodMetrics(month, targetCurr);
-    const prevMonth = this.getPreviousMonthStr(month);
-    const prevRaw = this.state.budgets[prevMonth];
-    const prevMetrics = prevRaw ? this.getPeriodMetrics(prevMonth, targetCurr) : null;
-
-    const categoryRows = this.state.categories
-      .filter(c => c.type === 'expense')
-      .map(cat => {
-        const baseUSD = Number(raw.categories?.[cat.id] || 0);
-        const basePlanned = this.convertAmount(baseUSD, 'USD', targetCurr, this.state.settings.fxRateKHR);
-        let rolloverAmt = 0;
-        if (raw.rolloverEnabled && prevRaw && prevMetrics && prevMetrics.txCount > 0) {
-          const prevPlanned = this.convertAmount(Number(prevRaw.categories?.[cat.id] || 0), 'USD', targetCurr, this.state.settings.fxRateKHR);
-          const prevActual = Math.max(0, prevMetrics.byCategory[cat.id] || 0);
-          rolloverAmt = prevPlanned - prevActual;
-        }
-        const effectivePlanned = Math.max(0, basePlanned + rolloverAmt);
-        const actual = Math.max(0, metrics.byCategory[cat.id] || 0);
-        const remaining = effectivePlanned - actual;
-        const pct = effectivePlanned > 0 ? (actual / effectivePlanned) * 100 : (actual > 0 ? 100 : 0);
-        return { category: cat, baseUSD, basePlanned, rolloverAmt, effectivePlanned, actual, remaining, pct };
-      });
-
-    const sumCatPlanned = categoryRows.reduce((s, r) => s + r.effectivePlanned, 0);
-    const overallPlanned = Math.max(
-      this.convertAmount(raw.overallUSD || 0, 'USD', targetCurr, this.state.settings.fxRateKHR),
-      sumCatPlanned
-    );
-    const actualExpense = metrics.netExpense;
-    const remainingBudget = overallPlanned - actualExpense;
-    const usagePct = overallPlanned > 0 ? (actualExpense / overallPlanned) * 100 : 0;
-
-    return {
-      month, raw, overallPlanned, actualExpense, actualIncome: metrics.income,
-      remainingBudget, usagePct, categoryRows
-    };
-  },
-
-  getUpcomingBillsForMonth(month, targetCurr = this.state.settings.reportCurrency) {
-    return (this.state.recurring || []).filter(r => r.active).map(r => {
-      const dueDay = String(r.dayOfMonth || 1).padStart(2, '0');
-      const dueDate = `${month}-${dueDay}`;
-      const alreadyPosted = this.state.transactions.some(
-        t => (t.recurringId === r.id && t.date.startsWith(month)) ||
-             (t.date.startsWith(month) && t.description.toLowerCase() === r.description.toLowerCase() && Math.abs(t.amount - r.amount) < 0.01)
-      );
-      const todayStr = new Date().toISOString().slice(0, 10);
-      return {
-        ...r,
-        dueDate,
-        isPaid: alreadyPosted || r.lastGeneratedPeriod === month,
-        isOverdue: !alreadyPosted && dueDate < todayStr && month <= todayStr.slice(0, 7),
-        amountInReportCurr: this.convertAmount(r.amount, r.currency, targetCurr, this.state.settings.fxRateKHR)
-      };
-    }).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-  },
-
-  seedSampleLedger(notify = true) {
-    const m = this.state.settings.selectedMonth;
-    const prevM = this.getPreviousMonthStr(m);
-    const fx = this.state.settings.fxRateKHR;
-
-    this.state.transactions = [
-      { id: 'tx_s1', date: `${prevM}-01`, type: 'income', description: 'Monthly Salary Payroll', amount: 1650, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_salary', paymentMethod: 'Bank Transfer', tags: ['payroll'], notes: '' },
-      { id: 'tx_s2', date: `${prevM}-05`, type: 'expense', description: 'Apartment Rent', amount: 350, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_housing', paymentMethod: 'ABA Transfer', tags: ['fixed'], notes: '' },
-      { id: 'tx_s3', date: `${prevM}-12`, type: 'expense', description: 'Aeon Supermarket Groceries', amount: 120, currency: 'USD', fxRateUsed: fx, accountId: 'acc_cc_usd', categoryId: 'cat_groceries', paymentMethod: 'Visa Card', tags: [], notes: '' },
-      { id: 'tx_s4', date: `${prevM}-15`, type: 'expense', description: 'EDC & PPWSA Utility Bills', amount: 215000, currency: 'KHR', fxRateUsed: fx, accountId: 'acc_bakong_khr', categoryId: 'cat_utilities', paymentMethod: 'KHQR', tags: ['bills'], notes: '' },
-
-      { id: 'tx_1', date: `${m}-01`, type: 'income', description: 'Monthly Salary Payroll', amount: 1650, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_salary', paymentMethod: 'Bank Transfer', tags: ['payroll'], notes: 'Main salary deposit' },
-      { id: 'tx_2', date: `${m}-03`, type: 'income', description: 'Automation Consulting Project', amount: 250, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_freelance', paymentMethod: 'ABA Pay', tags: ['consulting'], notes: '' },
-      { id: 'tx_3', date: `${m}-05`, type: 'expense', description: 'Apartment Rent', amount: 350, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', categoryId: 'cat_housing', paymentMethod: 'ABA Transfer', tags: ['rent'], recurringId: 'rec_rent', notes: '' },
-      { id: 'tx_4', date: `${m}-08`, type: 'expense', description: 'Aeon Supermarket & Household', amount: 96, currency: 'USD', fxRateUsed: fx, accountId: 'acc_cc_usd', categoryId: 'cat_groceries', paymentMethod: 'Visa Card', tags: ['split'], notes: 'Groceries + kitchen items',
-        splits: [
-          { categoryId: 'cat_groceries', amount: 64, note: 'Fresh produce' },
-          { categoryId: 'cat_shopping', amount: 32, note: 'Home essentials' }
-        ]
-      },
-      { id: 'tx_5', date: `${m}-10`, type: 'expense', description: 'Cafés & Weekday Lunches', amount: 420000, currency: 'KHR', fxRateUsed: fx, accountId: 'acc_bakong_khr', categoryId: 'cat_food', paymentMethod: 'KHQR', tags: ['dining'], notes: '' },
-      { id: 'tx_6', date: `${m}-12`, type: 'expense', description: 'Grab Rides & Fuel Top-Up', amount: 145000, currency: 'KHR', fxRateUsed: fx, accountId: 'acc_bakong_khr', categoryId: 'cat_transport', paymentMethod: 'KHQR', tags: ['commute'], notes: '' },
-      { id: 'tx_7', date: `${m}-14`, type: 'transfer', description: 'Emergency Fund Transfer', amount: 300, toAmount: 300, currency: 'USD', fxRateUsed: fx, accountId: 'acc_aba_usd', toAccountId: 'acc_save_usd', categoryId: 'cat_adjust', paymentMethod: 'Internal Transfer', tags: ['savings'], notes: '' }
-    ];
-    this.getBudgetForMonth(prevM);
-    this.getBudgetForMonth(m);
-    this.saveState();
-    if (notify) {
-      this.toast('Sample USD & KHR transactions loaded', 'success');
-      this.render();
-    }
-  },
-
-  // ============================================================================
-  // THEME, HEADER & NAVIGATION CONTROLLERS
-  // ============================================================================
-  applyTheme() {
-    const mode = this.state.settings.theme || 'dark';
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = mode === 'dark' || (mode === 'system' && prefersDark);
-    document.documentElement.classList.toggle('dark', isDark);
-    const metaTheme = document.querySelector('meta[name="theme-color"]');
-    if (metaTheme) metaTheme.setAttribute('content', isDark ? '#090d16' : '#f4f6fb');
-    const dBtn = document.getElementById('desktop-theme-btn');
-    if (dBtn) dBtn.innerHTML = Icon(isDark ? 'sun' : 'moon', 18);
-  },
-
-  cycleTheme(explicitMode = null) {
-    if (explicitMode) {
-      this.state.settings.theme = explicitMode;
-    } else {
-      this.state.settings.theme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
-    }
-    this.applyTheme();
-    this.saveState();
-    this.render();
-    this.toast(`Theme set to ${this.state.settings.theme}`, 'info');
-  },
-
-  updateHeaderBar() {
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-    const gEl = document.getElementById('header-greeting');
-    if (gEl) gEl.textContent = greeting;
-
-    const mLabel = document.getElementById('header-month-label');
-    if (mLabel) mLabel.textContent = this.formatMonthDisplay(this.state.settings.selectedMonth);
-
-    const cBtn = document.getElementById('header-curr-btn');
-    if (cBtn) cBtn.textContent = this.state.settings.reportCurrency === 'USD' ? 'USD ($)' : 'KHR (៛)';
-
-    const fxBadge = document.getElementById('sidebar-fx-badge');
-    if (fxBadge) fxBadge.textContent = `1 USD = ${Number(this.state.settings.fxRateKHR).toLocaleString()} ៛`;
-
-    const unpaidBills = this.getUpcomingBillsForMonth(this.state.settings.selectedMonth).filter(b => !b.isPaid && b.type === 'expense');
-    const bellBadge = document.getElementById('header-bell-badge');
-    if (bellBadge) {
-      if (unpaidBills.length > 0) {
-        bellBadge.textContent = unpaidBills.length;
-        bellBadge.classList.remove('hidden');
-      } else {
-        bellBadge.classList.add('hidden');
-      }
-    }
-  },
-
-  toggleReportCurrency() {
-    this.state.settings.reportCurrency = this.state.settings.reportCurrency === 'USD' ? 'KHR' : 'USD';
-    this.saveState();
-    this.updateHeaderBar();
-    this.render();
-    this.toast(`Reporting currency switched to ${this.state.settings.reportCurrency}`, 'info');
-  },
-
-  toggleBalancePrivacy() {
-    this.state.settings.hideBalance = !this.state.settings.hideBalance;
-    this.saveState();
-    this.render();
-  },
-
-  renderNavigation() {
-    const dNav = document.getElementById('desktop-nav');
-    if (dNav) {
-      dNav.innerHTML = PRIMARY_NAV.map(item => {
-        const active = this.activeTab === item.id && !this.subView;
-        return `
-          <button onclick="App.switchTab('${item.id}')"
-            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition btn-press ${active ? 'bg-brand-600 text-white font-semibold shadow-sm shadow-brand-600/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70'}">
-            ${Icon(item.icon, 18)}
-            <span>${item.label}</span>
-          </button>
-        `;
-      }).join('');
-    }
-
-    const mNav = document.getElementById('mobile-nav');
-    if (mNav) {
-      mNav.innerHTML = PRIMARY_NAV.map(item => {
-        const active = this.activeTab === item.id && !this.subView;
-        return `
-          <button onclick="App.switchTab('${item.id}')"
-            class="relative flex flex-col items-center justify-center py-2.5 px-1 transition btn-press ${active ? 'text-brand-600 dark:text-brand-400 font-semibold' : 'text-slate-400 dark:text-slate-500'}">
-            ${active ? '<span class="absolute top-0 w-6 h-0.5 rounded-full bg-brand-600 dark:bg-brand-400"></span>' : ''}
-            ${Icon(item.icon, 20)}
-            <span class="text-[10px] mt-1 tracking-tight">${item.label}</span>
-          </button>
-        `;
-      }).join('');
-    }
-  },
-
-  switchTab(tabId) {
-    this.activeTab = tabId;
-    this.subView = null;
-    const navObj = PRIMARY_NAV.find(n => n.id === tabId);
-    const titleEl = document.getElementById('header-title');
-    if (titleEl && navObj) titleEl.textContent = navObj.id === 'home' ? 'MyMoney' : navObj.label;
-    this.renderNavigation();
-    this.render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  },
-
-  openSubView(sub) {
-    this.subView = sub;
-    const titles = {
-      accounts: 'Accounts & Net Worth',
-      goals: 'Savings Goals',
-      calendar: 'Bills & Recurring Calendar',
-      import: 'Bank Statement Import Wizard'
-    };
-    const titleEl = document.getElementById('header-title');
-    if (titleEl) titleEl.textContent = titles[sub] || 'MyMoney';
-    this.renderNavigation();
-    this.render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  },
-
-  destroyCharts() {
-    Object.values(this.charts).forEach(ch => {
-      if (ch && typeof ch.destroy === 'function') ch.destroy();
+    const netExp = Math.max(0, grossExp - refunds);
+    let assets = 0, debt = 0;
+    this.state.accounts.forEach(a => {
+      const b = this.conv(this.getAccBalance(a.id), a.currency, curr, this.state.fxRate);
+      if (a.isDebt || b < 0) debt += Math.abs(b);
+      else assets += b;
     });
-    this.charts = {};
+    return { income, netExp, refunds, netFlow: income - netExp, transfers, byCat, assets, debt, netWorth: assets - debt };
+  },
+
+  setMonth(m) { if (m) { this.state.month = m; this.save(); this.render(); } },
+  setCurrency(c) { this.state.currency = c; this.save(); this.render(); },
+  toggleTheme() {
+    this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
+    document.body.classList.toggle('light', this.state.theme === 'light');
+    this.save();
+  },
+
+  switchTab(t) {
+    this.tab = t;
+    this.renderNav();
+    this.render();
+    window.scrollTo(0, 0);
+  },
+
+  renderNav() {
+    document.getElementById('bottom-nav').innerHTML = TABS.map(t => `
+      <button class="nav-btn ${this.tab === t.id ? 'active' : ''}" onclick="App.switchTab('${t.id}')">
+        <span style="font-size:17px;">${t.icon}</span>
+        <span>${t.label}</span>
+      </button>
+    `).join('');
   },
 
   render() {
-    this.destroyCharts();
-    this.updateHeaderBar();
-    const container = document.getElementById('app-view');
-    if (!container) return;
-
-    if (this.subView === 'accounts') return this.renderAccountsView(container);
-    if (this.subView === 'goals') return this.renderGoalsView(container);
-    if (this.subView === 'calendar') return this.renderCalendarView(container);
-    if (this.subView === 'import') return this.renderImportWizardView(container);
-
-    switch (this.activeTab) {
-      case 'home': this.renderHomeDashboard(container); break;
-      case 'transactions': this.renderTransactionsScreen(container); break;
-      case 'budget': this.renderBudgetScreen(container); break;
-      case 'reports': this.renderReportsScreen(container); break;
-      case 'settings': this.renderSettingsScreen(container); break;
-      default: this.renderHomeDashboard(container);
-    }
+    const el = document.getElementById('main-view');
+    if (this.tab === 'dashboard') this.renderDashboard(el);
+    else if (this.tab === 'transactions') this.renderTransactions(el);
+    else if (this.tab === 'budgets') this.renderBudgets(el);
+    else if (this.tab === 'accounts') this.renderAccounts(el);
+    else if (this.tab === 'goals') this.renderGoals(el);
+    else this.renderMore(el);
   },
 
-  // ============================================================================
-  // 5. HOME DASHBOARD — THE HERO EXPERIENCE
-  // ============================================================================
-  renderHomeDashboard(el) {
-    const month = this.state.settings.selectedMonth;
-    const prevMonth = this.getPreviousMonthStr(month);
-    const curr = this.state.settings.reportCurrency;
-    const balSummary = this.getConsolidatedBalanceSummary(curr);
-    const metrics = this.getPeriodMetrics(month, curr);
-    const prevMetrics = this.getPeriodMetrics(prevMonth, curr);
-    const budget = this.getBudgetForMonth(month, curr);
-    const w = this.state.settings.dashboardWidgets;
+  renderDashboard(el) {
+    const m = this.state.month;
+    const curr = this.state.currency;
+    const k = this.getMetrics(m);
+    const bObj = this.state.budgets[m] || { overallUSD: 1100, cats: {} };
+    const budgetTotal = this.conv(bObj.overallUSD || 1100, 'USD', curr, this.state.fxRate);
+    const budgetPct = budgetTotal > 0 ? Math.min(100, (k.netExp / budgetTotal) * 100) : 0;
 
-    // Valid MoM comparisons only if previous month has actual records
-    const hasPrevIncome = prevMetrics.income > 0;
-    const incDiffPct = hasPrevIncome ? (((metrics.income - prevMetrics.income) / prevMetrics.income) * 100).toFixed(1) : null;
-    const hasPrevExpense = prevMetrics.netExpense > 0;
-    const expDiffPct = hasPrevExpense ? (((metrics.netExpense - prevMetrics.netExpense) / prevMetrics.netExpense) * 100).toFixed(1) : null;
-
-    const recentTxs = [...this.state.transactions]
-      .filter(t => t.date.startsWith(month))
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 6);
+    const expCats = CATEGORIES.filter(c => c.type === 'expense')
+      .map(c => ({ ...c, val: Math.max(0, k.byCat[c.id] || 0) }))
+      .filter(c => c.val > 0)
+      .sort((a, b) => b.val - a.val);
 
     el.innerHTML = `
-      <!-- MAIN HERO BALANCE COMPONENT -->
-      <section class="hero-balance-card rounded-3xl p-5 sm:p-6 relative overflow-hidden">
-        <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-indigo-500/15 blur-2xl pointer-events-none"></div>
-        <div class="relative z-10 flex flex-col gap-4">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold uppercase tracking-wider text-indigo-200/90">Available Liquid Balance</span>
-              <button onclick="App.openInfoPopover('Consolidated Available Balance', 'Displays the sum of your positive cash, bank, e-wallet, and savings accounts converted into your active reporting currency (1 USD = ' + App.state.settings.fxRateKHR.toLocaleString() + ' KHR). This is your actual account liquidity—distinct from monthly cash flow or remaining budget.')"
-                class="text-indigo-300/80 hover:text-white p-1" aria-label="Balance explanation">
-                ${Icon('info', 14)}
-              </button>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <button onclick="App.toggleBalancePrivacy()" class="p-2 rounded-xl bg-white/10 hover:bg-white/15 text-indigo-100 btn-press" title="Hide or Show Balance">
-                ${Icon(this.state.settings.hideBalance ? 'eyeOff' : 'eye', 16)}
-              </button>
-              <button onclick="App.openDashboardCustomizerSheet()" class="p-2 rounded-xl bg-white/10 hover:bg-white/15 text-indigo-100 btn-press" title="Customize Dashboard">
-                ${Icon('sliders', 16)}
-              </button>
-            </div>
-          </div>
+      <!-- Quick Strip -->
+      <div class="chips">
+        <span class="chip">💱 1 USD = ${this.state.fxRate.toLocaleString()} KHR</span>
+        <button class="chip" onclick="App.openFxModal()">Edit FX Rate</button>
+        <button class="chip" onclick="App.openTxModal('transfer')">⇄ Transfer / Pay Card</button>
+        <button class="chip" onclick="App.switchTab('more')">📅 Bills & Backup</button>
+      </div>
 
+      <!-- 4 KPI Cards -->
+      <div class="grid-2">
+        <div class="card" onclick="App.switchTab('transactions')">
+          <div class="kpi-title"><span>INCOME (${m})</span><span class="text-green">↑ IN</span></div>
+          <div class="kpi-val text-green">${this.fmt(k.income)}</div>
+          <div class="text-muted">Excludes transfers</div>
+        </div>
+        <div class="card" onclick="App.switchTab('transactions')">
+          <div class="kpi-title"><span>NET EXPENSES</span><span class="text-red">↓ OUT</span></div>
+          <div class="kpi-val text-red">${this.fmt(k.netExp)}</div>
+          <div class="text-muted">${k.refunds > 0 ? 'After ' + this.fmt(k.refunds) + ' refunds' : 'Tap for ledger'}</div>
+        </div>
+        <div class="card">
+          <div class="kpi-title"><span>NET CASH FLOW</span><span>💧</span></div>
+          <div class="kpi-val ${k.netFlow >= 0 ? 'text-green' : 'text-red'}">${k.netFlow >= 0 ? '+' : ''}${this.fmt(k.netFlow)}</div>
+          <div class="text-muted">Income minus net spend</div>
+        </div>
+        <div class="card" onclick="App.switchTab('accounts')">
+          <div class="kpi-title"><span>NET WORTH</span><span>🏦</span></div>
+          <div class="kpi-val">${this.fmt(k.netWorth)}</div>
+          <div class="text-muted">Assets: ${this.fmt(k.assets)}</div>
+        </div>
+      </div>
+
+      <!-- Master Monthly Budget Bar -->
+      <div class="card" onclick="App.switchTab('budgets')">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div class="text-3xl sm:text-4xl font-extrabold tracking-tight tabular-nums">
-              ${this.formatMoney(balSummary.availableAssets, curr, true)}
-            </div>
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-indigo-200/90">
-              <span class="px-2.5 py-1 rounded-lg bg-white/10 tabular-nums">USD Accounts: ${this.formatMoney(balSummary.rawUSD, 'USD', true)}</span>
-              <span class="px-2.5 py-1 rounded-lg bg-white/10 tabular-nums">KHR Accounts: ${this.formatMoney(balSummary.rawKHR, 'KHR', true)}</span>
-              <span class="px-2.5 py-1 rounded-lg bg-white/10 tabular-nums">Net Worth: ${this.formatMoney(balSummary.netWorth, curr, true)}</span>
-            </div>
+            <div style="font-weight:700; font-size:14px;">Monthly Budget Usage (${m})</div>
+            <div class="text-muted">${this.fmt(k.netExp)} spent of ${this.fmt(budgetTotal)} (${budgetPct.toFixed(1)}%)</div>
           </div>
-
-          <div class="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <button onclick="App.openSubView('accounts')" class="px-3.5 py-2 rounded-xl bg-white text-slate-900 font-semibold text-xs flex items-center gap-1.5 shadow-xs btn-press">
-                ${Icon('landmark', 14)}
-                <span>View Accounts (${this.state.accounts.length})</span>
-              </button>
-              <button onclick="App.openTxSheet(null, 'transfer')" class="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/20 text-white font-semibold text-xs flex items-center gap-1.5 btn-press">
-                ${Icon('repeat', 14)}
-                <span>Transfer</span>
-              </button>
-            </div>
-            <button onclick="App.openSubView('goals')" class="text-xs font-medium text-indigo-200 hover:text-white flex items-center gap-1">
-              <span>Savings Goals</span>
-              ${Icon('chevronRight', 14)}
-            </button>
-          </div>
+          <span class="badge" style="color:${budgetPct > 90 ? 'var(--red)' : 'var(--green)'}">
+            ${this.fmt(budgetTotal - k.netExp)} left
+          </span>
         </div>
-      </section>
-
-      ${w.incomeExpenseRow ? `
-      <!-- INCOME & EXPENSE SUMMARY ROW -->
-      <section class="grid grid-cols-2 gap-3 sm:gap-4">
-        <div onclick="App.drilldownToTransactions({type:'income'})" class="fin-card fin-card-interactive p-4 sm:p-5">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Income (${this.formatMonthDisplay(month)})</span>
-            <span class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-              ${Icon('arrowDownLeft', 15)}
-            </span>
-          </div>
-          <div class="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
-            ${this.formatMoney(metrics.income, curr, true)}
-          </div>
-          <div class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            ${incDiffPct !== null
-              ? `<span class="${Number(incDiffPct) >= 0 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-amber-500 font-semibold'}">${Number(incDiffPct) >= 0 ? '+' : ''}${incDiffPct}%</span> vs ${this.formatMonthDisplay(prevMonth)}`
-              : 'Tap to inspect income records'}
-          </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${budgetPct}%; background:${budgetPct > 90 ? 'var(--red)' : budgetPct > 75 ? 'var(--amber)' : 'var(--green)'};"></div>
         </div>
+      </div>
 
-        <div onclick="App.drilldownToTransactions({type:'expense'})" class="fin-card fin-card-interactive p-4 sm:p-5">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Expenses (${this.formatMonthDisplay(month)})</span>
-            <span class="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center">
-              ${Icon('arrowUpRight', 15)}
-            </span>
-          </div>
-          <div class="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
-            ${this.formatMoney(metrics.netExpense, curr, true)}
-          </div>
-          <div class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            ${expDiffPct !== null
-              ? `<span class="${Number(expDiffPct) <= 0 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-500 font-semibold'}">${Number(expDiffPct) > 0 ? '+' : ''}${expDiffPct}%</span> vs ${this.formatMonthDisplay(prevMonth)}`
-              : 'Excludes internal transfers'}
-          </div>
-        </div>
-      </section>` : ''}
-
-      ${w.budgetProgress ? `
-      <!-- MONTHLY BUDGET PROGRESS CARD -->
-      <section onclick="App.switchTab('budget')" class="fin-card fin-card-interactive p-4 sm:p-5">
-        <div class="flex items-center justify-between gap-2 mb-3">
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 class="font-bold text-sm sm:text-base">Monthly Spending Budget</h2>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${budget.usagePct > 100 ? 'bg-rose-500/15 text-rose-500' : budget.usagePct >= 80 ? 'bg-amber-500/15 text-amber-500' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'}">
-                ${budget.usagePct > 100 ? 'Over Budget' : budget.usagePct >= 80 ? 'Approaching Limit' : 'On Track'}
-              </span>
+      <!-- Native Category Breakdown Bars -->
+      <div class="card">
+        <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Spending Breakdown (${m})</div>
+        ${expCats.length ? expCats.map(c => {
+          const pct = k.netExp > 0 ? (c.val / k.netExp) * 100 : 0;
+          return `
+            <div style="margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:3px;">
+                <span>${c.icon}${c.name}</span>
+                <strong>${this.fmt(c.val)} (${pct.toFixed(0)}%)</strong>
+              </div>
+              <div class="progress-track" style="height:6px; margin:0;">
+                <div class="progress-fill" style="width:${pct}\%; background:${c.color};"></div>
+              </div>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Spent <strong class="text-slate-800 dark:text-slate-200 tabular-nums">${this.formatMoney(budget.actualExpense, curr, true)}</strong> of <strong class="tabular-nums">${this.formatMoney(budget.overallPlanned, curr, true)}</strong> planned
-            </p>
-          </div>
-          <div class="text-right">
-            <span class="text-lg font-extrabold tabular-nums ${budget.usagePct > 100 ? 'text-rose-500' : 'text-brand-600 dark:text-brand-400'}">${budget.usagePct.toFixed(0)}%</span>
-            <span class="block text-[10px] text-slate-400">used</span>
-          </div>
-        </div>
+          `;
+        }).join('') : '<div class="text-muted">No expenses recorded for this month yet. Tap + to add one.</div>'}
+      </div>
 
-        <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2.5">
-          <div class="h-full rounded-full transition-all duration-300 ${budget.usagePct > 100 ? 'bg-rose-500' : budget.usagePct >= 80 ? 'bg-amber-500' : 'bg-brand-600'}"
-               style="width: ${Math.min(100, budget.usagePct)}%"></div>
+      <!-- Accounts Overview -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="font-weight:700; font-size:14px;">Account Balances</span>
+          <span class="text-muted" onclick="App.switchTab('accounts')">Manage →</span>
         </div>
-
-        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-          <span>Remaining: <strong class="tabular-nums ${budget.remainingBudget >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${this.formatMoney(budget.remainingBudget, curr, true)}</strong></span>
-          <span class="text-brand-600 dark:text-brand-400 font-semibold flex items-center gap-0.5">Open Budget Planner ${Icon('chevronRight', 14)}</span>
-        </div>
-      </section>` : ''}
-
-      ${w.spendingAnalytics ? `
-      <!-- SPENDING ANALYTICS ROW -->
-      <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <!-- Category Breakdown -->
-        <div class="lg:col-span-5 fin-card p-4 sm:p-5 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h2 class="font-bold text-sm">Top Spending Categories</h2>
-              <p class="text-[11px] text-slate-400">${this.formatMonthDisplay(month)} breakdown</p>
+        ${this.state.accounts.map(a => {
+          const bal = this.getAccBalance(a.id);
+          return `
+            <div class="row-item">
+              <div>
+                <div style="font-weight:600; font-size:13px;">${a.name}</div>
+                <div class="text-muted">${a.type.toUpperCase()} •${a.currency}</div>
+              </div>
+              <div style="text-align:right; font-weight:700;" class="${bal < 0 ? 'text-red' : 'text-green'}">
+                ${this.fmt(bal, a.currency)}
+              </div>
             </div>
-            <button onclick="App.switchTab('budget')" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">View all</button>
-          </div>
+          `;
+        }).join('')}
+      </div>
 
-          ${budget.actualExpense > 0 ? `
-            <div class="h-44 my-1">
-              <canvas id="home-cat-chart"></canvas>
-            </div>
-            <div class="space-y-2 mt-3">
-              ${budget.categoryRows.filter(r => r.actual > 0).sort((a, b) => b.actual - a.actual).slice(0, 4).map(r => {
-                const share = ((r.actual / budget.actualExpense) * 100).toFixed(0);
-                return `
-                  <button onclick="App.openCategoryDetailSheet('${r.category.id}')" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 text-xs transition">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color:${r.category.color}"></span>
-                      <span class="font-medium truncate">${r.category.name}</span>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0 tabular-nums">
-                      <span class="text-slate-400">${share}%</span>
-                      <span class="font-semibold">${this.formatMoney(r.actual, curr, true)}</span>
-                    </div>
-                  </button>
-                `;
-              }).join('')}
-            </div>
-          ` : `
-            <div class="py-10 text-center text-xs text-slate-400">
-              No expenses recorded for ${this.formatMonthDisplay(month)} yet.
-            </div>
-          `}
+      <!-- Recent Transactions -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="font-weight:700; font-size:14px;">Recent Transactions</span>
+          <span class="text-muted" onclick="App.switchTab('transactions')">See All →</span>
         </div>
-
-        <!-- Monthly Income vs Expense Chart -->
-        <div class="lg:col-span-7 fin-card p-4 sm:p-5 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h2 class="font-bold text-sm">Income vs. Expenses Trend</h2>
-              <p class="text-[11px] text-slate-400">6-month cash flow comparison (${curr})</p>
-            </div>
-            <button onclick="App.switchTab('reports')" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">Full Analytics →</button>
-          </div>
-          <div class="h-60">
-            <canvas id="home-trend-chart"></canvas>
-          </div>
-        </div>
-      </section>` : ''}
-
-      ${w.recentTransactions ? `
-      <!-- RECENT TRANSACTIONS -->
-      <section class="fin-card p-4 sm:p-5">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h2 class="font-bold text-sm sm:text-base">Recent Activity</h2>
-            <p class="text-[11px] text-slate-400">Tap any transaction for details or quick actions</p>
-          </div>
-          <button onclick="App.switchTab('transactions')" class="text-xs font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-0.5 hover:underline">
-            <span>View all</span>
-            ${Icon('chevronRight', 14)}
-          </button>
-        </div>
-        ${this.renderGroupedTransactionList(recentTxs)}
-      </section>` : ''}
+        ${this.renderTxRows(this.state.transactions.filter(t => t.date.startsWith(m)).slice().reverse().slice(0, 6))}
+      </div>
     `;
-
-    this.initHomeCharts(month, curr, budget);
   },
 
-  initHomeCharts(month, curr, budget) {
-    if (typeof Chart === 'undefined') return;
-    const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    const gridColor = isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(15, 23, 42, 0.06)';
-
-    const catCanvas = document.getElementById('home-cat-chart');
-    if (catCanvas && budget.actualExpense > 0) {
-      const activeCats = budget.categoryRows.filter(r => r.actual > 0).sort((a, b) => b.actual - a.actual);
-      this.charts.homeCat = new Chart(catCanvas, {
-        type: 'doughnut',
-        data: {
-          labels: activeCats.map(r => r.category.name),
-          datasets: [{
-            data: activeCats.map(r => +r.actual.toFixed(2)),
-            backgroundColor: activeCats.map(r => r.category.color),
-            borderWidth: 0,
-            hoverOffset: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '70%',
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => ` ${ctx.label}: ${this.formatMoney(ctx.raw, curr)}`
-              }
-            }
-          }
-        }
-      });
-    }
-
-    const trendCanvas = document.getElementById('home-trend-chart');
-    if (trendCanvas) {
-      const months = [];
-      let ptr = month;
-      for (let i = 0; i < 6; i++) {
-        months.unshift(ptr);
-        ptr = this.getPreviousMonthStr(ptr);
-      }
-      this.charts.homeTrend = new Chart(trendCanvas, {
-        type: 'bar',
-        data: {
-          labels: months.map(m => this.formatMonthDisplay(m)),
-          datasets: [
-            { label: 'Income', data: months.map(m => +this.getPeriodMetrics(m, curr).income.toFixed(2)), backgroundColor: '#10b981', borderRadius: 6, maxBarThickness: 22 },
-            { label: 'Expenses', data: months.map(m => +this.getPeriodMetrics(m, curr).netExpense.toFixed(2)), backgroundColor: '#6366f1', borderRadius: 6, maxBarThickness: 22 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } },
-            y: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } }
-          },
-          plugins: {
-            legend: { position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true, color: textColor, font: { size: 11 } } }
-          }
-        }
-      });
-    }
-  },
-
-  // ============================================================================
-  // SHARED GROUPED TRANSACTION LIST & DETAIL SHEET
-  // ============================================================================
-  renderGroupedTransactionList(txs) {
-    if (!txs.length) {
+  renderTxRows(list) {
+    if (!list.length) return '<div class="text-muted" style="padding:12px 0;">No transactions found.</div>';
+    return list.map(t => {
+      const cat = CATEGORIES.find(c => c.id === t.categoryId) || { icon: '🔄', name: 'Transfer' };
+      const acc = this.state.accounts.find(a => a.id === t.accountId);
+      const cls = t.type === 'income' || t.type === 'refund' ? 'text-green' : t.type === 'transfer' ? '' : 'text-red';
+      const sign = t.type === 'income' || t.type === 'refund' ? '+' : t.type === 'transfer' ? '⇄ ' : '-';
       return `
-        <div class="py-12 px-4 text-center">
-          <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center mx-auto mb-3">
-            ${Icon('list', 22)}
+        <div class="row-item" onclick="App.editTx('${t.id}')">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:20px;">${t.type === 'transfer' ? '🔄' : cat.icon}</div>
+            <div>
+              <div style="font-weight:600; font-size:13px;">${t.desc} ${t.type === 'refund' ? '<span class="badge">Refund</span>' : ''}</div>
+              <div class="text-muted">${t.date} • ${acc ? acc.name : ''} • ${cat.name}</div>
+            </div>
           </div>
-          <h3 class="font-bold text-sm">No transactions recorded yet</h3>
-          <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1 mb-4">Add your first income, expense, or account transfer to start tracking your finances.</p>
-          <button onclick="App.openTxSheet()" class="px-4 py-2.5 rounded-xl bg-brand-600 text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm btn-press">
-            ${Icon('plus', 15)}
-            <span>Add Transaction</span>
-          </button>
-        </div>
-      `;
-    }
-
-    const groups = {};
-    txs.forEach(tx => {
-      if (!groups[tx.date]) groups[tx.date] = [];
-      groups[tx.date].push(tx);
-    });
-
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const yestStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
-    return Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(date => {
-      const dateLabel = date === todayStr ? 'Today' : date === yestStr ? 'Yesterday' : new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      return `
-        <div class="mb-3 last:mb-0">
-          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 py-1.5 px-1">${dateLabel}</div>
-          <div class="divide-y divide-slate-100 dark:divide-slate-800/70">
-            ${groups[date].map(tx => {
-              const cat = this.state.categories.find(c => c.id === tx.categoryId) || { name: 'Transfer', iconName: 'repeat', color: '#6366f1' };
-              const acc = this.state.accounts.find(a => a.id === tx.accountId);
-              const toAcc = tx.toAccountId ? this.state.accounts.find(a => a.id === tx.toAccountId) : null;
-              const isIncome = tx.type === 'income' || tx.type === 'refund';
-              const isTransfer = tx.type === 'transfer';
-              const amtClass = isIncome ? 'text-emerald-600 dark:text-emerald-400' : isTransfer ? 'text-slate-600 dark:text-slate-300' : 'text-slate-900 dark:text-white';
-              const sign = isIncome ? '+' : isTransfer ? '⇄ ' : '-';
-
-              return `
-                <div onclick="App.openTxDetailSheet('${tx.id}')" class="py-3 px-1.5 -mx-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between gap-3 cursor-pointer transition">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                         style="background-color: ${(isTransfer ? '#6366f1' : cat.color)}18; color: ${isTransfer ? '#6366f1' : cat.color}">
-                      ${Icon(isTransfer ? 'repeat' : (cat.iconName || 'shoppingBag'), 18)}
-                    </div>
-                    <div class="min-w-0">
-                      <div class="font-semibold text-xs sm:text-sm truncate flex items-center gap-1.5">
-                        <span class="truncate">${tx.description}</span>
-                        ${tx.splits && tx.splits.length ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-medium bg-brand-500/15 text-brand-400">Split</span>` : ''}
-                        ${tx.type === 'refund' ? `<span class="px-1.5 py-0.2 rounded text-[10px] font-medium bg-cyan-500/15 text-cyan-400">Refund</span>` : ''}
-                      </div>
-                      <div class="text-[11px] text-slate-400 truncate mt-0.5">
-                        ${isTransfer ? `${acc?.name || 'Account'} → ${toAcc?.name || 'Account'}` : `${cat.name} • ${acc?.name || ''}`}
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-right shrink-0 tabular-nums">
-                    <div class="font-bold text-xs sm:text-sm ${amtClass}">
-                      ${sign}${this.formatMoney(tx.amount, tx.currency, true)}
-                    </div>
-                    ${tx.currency !== this.state.settings.reportCurrency ? `
-                      <div class="text-[10px] text-slate-400">≈ ${this.formatMoney(this.txInReportCurrency(tx), this.state.settings.reportCurrency, true)}</div>
-                    ` : ''}
-                  </div>
-                </div>
-              `;
-            }).join('')}
+          <div style="text-align:right;">
+            <div style="font-weight:700; font-size:13px;" class="${cls}">${sign}${this.fmt(t.amount, t.currency)}</div>
+            <div class="text-muted">Tap to edit</div>
           </div>
         </div>
       `;
     }).join('');
   },
 
-  openTxDetailSheet(txId) {
-    const tx = this.state.transactions.find(t => t.id === txId);
-    if (!tx) return;
-    const cat = this.state.categories.find(c => c.id === tx.categoryId) || { name: 'Transfer', iconName: 'repeat', color: '#6366f1' };
-    const acc = this.state.accounts.find(a => a.id === tx.accountId);
-    const toAcc = tx.toAccountId ? this.state.accounts.find(a => a.id === tx.toAccountId) : null;
-
-    this.openSheet(`
-      <div class="p-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Transaction Details</span>
-        <button onclick="App.closeSheet()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white">${Icon('close', 16)}</button>
-      </div>
-      <div class="p-5 space-y-4 overflow-y-auto text-sm">
-        <div class="flex flex-col items-center text-center py-2">
-          <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-2" style="background-color:${cat.color}20; color:${cat.color}">
-            ${Icon(tx.type === 'transfer' ? 'repeat' : (cat.iconName || 'wallet'), 24)}
-          </div>
-          <div class="text-2xl font-extrabold tabular-nums">
-            ${tx.type === 'income' || tx.type === 'refund' ? '+' : tx.type === 'transfer' ? '⇄ ' : '-'}${this.formatMoney(tx.amount, tx.currency)}
-          </div>
-          <div class="font-semibold text-base mt-1">${tx.description}</div>
-          <span class="text-xs text-slate-400 mt-0.5 capitalize">${tx.type} • ${tx.date}</span>
-        </div>
-
-        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-2.5 text-xs">
-          <div class="flex justify-between">
-            <span class="text-slate-400">Account</span>
-            <span class="font-semibold">${acc ? acc.name : '—'}${toAcc ? ' → ' + toAcc.name : ''}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">Category</span>
-            <span class="font-semibold">${tx.type === 'transfer' ? 'Internal Transfer' : cat.name}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">Payment Method</span>
-            <span class="font-semibold">${tx.paymentMethod || 'Standard'}</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-slate-400">Locked Exchange Rate</span>
-            <span class="font-semibold tabular-nums">1 USD = ${(tx.fxRateUsed || this.state.settings.fxRateKHR).toLocaleString()} KHR</span>
-          </div>
-          ${tx.notes ? `<div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60"><span class="text-slate-400 block mb-0.5">Notes</span><p class="font-medium">${tx.notes}</p></div>` : ''}
-        </div>
-
-        ${tx.splits && tx.splits.length ? `
-          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-1.5 text-xs">
-            <div class="font-bold text-slate-400 uppercase text-[10px]">Split Breakdown</div>
-            ${tx.splits.map(s => {
-              const sc = this.state.categories.find(c => c.id === s.categoryId);
-              return `<div class="flex justify-between"><span>${sc ? sc.name : 'Category'} ${s.note ? `(${s.note})` : ''}</span><span class="font-bold tabular-nums">${this.formatMoney(s.amount, tx.currency)}</span></div>`;
-            }).join('')}
-          </div>
-        ` : ''}
-      </div>
-      <div class="p-4 border-t border-slate-200/80 dark:border-slate-800 grid grid-cols-3 gap-2">
-        <button onclick="App.duplicateTx('${tx.id}')" class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-semibold text-xs flex items-center justify-center gap-1.5 btn-press">
-          ${Icon('copy', 14)} <span>Duplicate</span>
-        </button>
-        <button onclick="App.openTxSheet('${tx.id}')" class="py-2.5 px-3 rounded-xl bg-brand-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 btn-press">
-          ${Icon('edit', 14)} <span>Edit</span>
-        </button>
-        <button onclick="App.confirmDeleteTx('${tx.id}')" class="py-2.5 px-3 rounded-xl bg-rose-500/15 text-rose-500 font-semibold text-xs flex items-center justify-center gap-1.5 btn-press">
-          ${Icon('trash', 14)} <span>Delete</span>
-        </button>
-      </div>
-    `);
-  },
-
-  duplicateTx(txId) {
-    const orig = this.state.transactions.find(t => t.id === txId);
-    if (!orig) return;
-    const copy = {
-      ...JSON.parse(JSON.stringify(orig)),
-      id: 'tx_' + Date.now(),
-      date: new Date().toISOString().slice(0, 10)
-    };
-    this.state.transactions.push(copy);
-    this.saveState();
-    this.closeSheet();
-    this.render();
-    this.toast('Transaction duplicated for today', 'success');
-  },
-
-  confirmDeleteTx(txId) {
-    const tx = this.state.transactions.find(t => t.id === txId);
-    if (!tx) return;
-    this.openConfirmDialog({
-      title: 'Delete Transaction?',
-      message: `Are you sure you want to delete "${tx.description}" (${this.formatMoney(tx.amount, tx.currency)})? Account balances and monthly budgets will immediately recalculate.`,
-      confirmLabel: 'Delete Permanently',
-      danger: true,
-      onConfirm: () => {
-        this.state.transactions = this.state.transactions.filter(t => t.id !== txId);
-        this.saveState();
-        this.closeSubSheet();
-        this.closeSheet();
-        this.render();
-        this.toast('Transaction deleted', 'info');
-      }
-    });
-  },
-
-  // ============================================================================
-  // 8. TRANSACTIONS SCREEN
-  // ============================================================================
-  renderTransactionsScreen(el) {
-    const f = this.txFilter;
-    const curr = this.state.settings.reportCurrency;
-
-    let list = this.state.transactions.filter(tx => {
-      if (f.search) {
-        const q = f.search.toLowerCase();
-        const inDesc = (tx.description || '').toLowerCase().includes(q);
-        const inNotes = (tx.notes || '').toLowerCase().includes(q);
-        const inTags = (tx.tags || []).some(t => t.toLowerCase().includes(q));
-        if (!inDesc && !inNotes && !inTags) return false;
-      }
-      if (f.accountId !== 'ALL' && tx.accountId !== f.accountId && tx.toAccountId !== f.accountId) return false;
-      if (f.categoryId !== 'ALL') {
-        const inSplit = tx.splits && tx.splits.some(s => s.categoryId === f.categoryId);
-        if (tx.categoryId !== f.categoryId && !inSplit) return false;
-      }
-      if (f.type !== 'ALL' && tx.type !== f.type) return false;
-      if (f.currency !== 'ALL' && tx.currency !== f.currency) return false;
-      if (f.dateFrom && tx.date < f.dateFrom) return false;
-      if (f.dateTo && tx.date > f.dateTo) return false;
-      if (f.minAmt !== '' && tx.amount < Number(f.minAmt)) return false;
-      if (f.maxAmt !== '' && tx.amount > Number(f.maxAmt)) return false;
+  renderTransactions(el) {
+    const list = this.state.transactions.filter(t => {
+      if (this.filter.q && !t.desc.toLowerCase().includes(this.filter.q.toLowerCase())) return false;
+      if (this.filter.type !== 'ALL' && t.type !== this.filter.type) return false;
+      if (this.filter.acc !== 'ALL' && t.accountId !== this.filter.acc) return false;
       return true;
-    });
-
-    list.sort((a, b) => {
-      if (f.sort === 'date_asc') return a.date.localeCompare(b.date);
-      if (f.sort === 'amt_desc') return this.txInReportCurrency(b) - this.txInReportCurrency(a);
-      if (f.sort === 'amt_asc') return this.txInReportCurrency(a) - this.txInReportCurrency(b);
-      return b.date.localeCompare(a.date);
-    });
-
-    // Summary of filtered rows
-    let sumIn = 0, sumOut = 0;
-    list.forEach(t => {
-      const v = this.txInReportCurrency(t, curr);
-      if (t.type === 'income') sumIn += v;
-      else if (t.type === 'expense') sumOut += v;
-      else if (t.type === 'refund') sumOut = Math.max(0, sumOut - v);
-    });
-
-    const activeFilterChips = [];
-    if (f.type !== 'ALL') activeFilterChips.push({ label: `Type: ${f.type}`, clear: () => { this.txFilter.type = 'ALL'; this.render(); } });
-    if (f.accountId !== 'ALL') {
-      const a = this.state.accounts.find(x => x.id === f.accountId);
-      activeFilterChips.push({ label: `Account: ${a ? a.name : f.accountId}`, clear: () => { this.txFilter.accountId = 'ALL'; this.render(); } });
-    }
-    if (f.categoryId !== 'ALL') {
-      const c = this.state.categories.find(x => x.id === f.categoryId);
-      activeFilterChips.push({ label: `Category: ${c ? c.name : f.categoryId}`, clear: () => { this.txFilter.categoryId = 'ALL'; this.render(); } });
-    }
-    if (f.currency !== 'ALL') activeFilterChips.push({ label: `Currency: ${f.currency}`, clear: () => { this.txFilter.currency = 'ALL'; this.render(); } });
-    if (f.dateFrom || f.dateTo) activeFilterChips.push({ label: `Dates: ${f.dateFrom || '*'} → ${f.dateTo || '*'}`, clear: () => { this.txFilter.dateFrom = ''; this.txFilter.dateTo = ''; this.render(); } });
+    }).slice().sort((a, b) => b.date.localeCompare(a.date));
 
     el.innerHTML = `
-      <!-- Search & Filter Bar -->
-      <div class="fin-card p-3.5 sm:p-4 space-y-3">
-        <div class="flex items-center gap-2">
-          <div class="relative flex-1">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${Icon('search', 16)}</span>
-            <input type="text" value="${f.search}" placeholder="Search merchant, notes, or #tags..."
-              oninput="App.txFilter.search=this.value; App.renderTransactionsListOnly()"
-              class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-transparent focus:border-brand-500 text-xs sm:text-sm focus:outline-none" />
-          </div>
-          <button onclick="App.openFilterSheet()" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold flex items-center gap-1.5 shrink-0 btn-press">
-            ${Icon('filter', 15)}
-            <span>Filter & Sort</span>
-            ${activeFilterChips.length ? `<span class="w-4 h-4 rounded-full bg-brand-600 text-white text-[10px] flex items-center justify-center">${activeFilterChips.length}</span>` : ''}
-          </button>
-          <button onclick="App.openTxSheet()" class="hidden sm:flex px-3.5 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold items-center gap-1.5 shrink-0 btn-press">
-            ${Icon('plus', 15)}
-            <span>Add</span>
-          </button>
-        </div>
-
-        ${activeFilterChips.length ? `
-          <div class="flex flex-wrap items-center gap-1.5 pt-1">
-            ${activeFilterChips.map((chip, idx) => `
-              <button onclick="App.clearSingleFilterChip(${idx})" class="px-2.5 py-1 rounded-lg bg-brand-500/15 text-brand-600 dark:text-brand-400 text-[11px] font-semibold flex items-center gap-1">
-                <span>${chip.label}</span>
-                <span>✕</span>
-              </button>
-            `).join('')}
-            <button onclick="App.resetAllTxFilters()" class="text-[11px] text-slate-400 hover:text-rose-500 underline ml-1">Reset all</button>
-          </div>
-        ` : ''}
-      </div>
-
-      <!-- Period Summary Bar -->
-      <div class="grid grid-cols-3 gap-2.5 sm:gap-4" id="tx-summary-strip">
-        <div class="fin-card p-3 sm:p-4">
-          <div class="text-[11px] text-slate-400">Filtered Income</div>
-          <div class="text-sm sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">${this.formatMoney(sumIn, curr, true)}</div>
-        </div>
-        <div class="fin-card p-3 sm:p-4">
-          <div class="text-[11px] text-slate-400">Filtered Expenses</div>
-          <div class="text-sm sm:text-lg font-bold text-rose-500 tabular-nums mt-0.5">${this.formatMoney(sumOut, curr, true)}</div>
-        </div>
-        <div class="fin-card p-3 sm:p-4">
-          <div class="text-[11px] text-slate-400">Net Flow (${list.length})</div>
-          <div class="text-sm sm:text-lg font-bold tabular-nums mt-0.5 ${sumIn - sumOut >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${this.formatMoney(sumIn - sumOut, curr, true)}</div>
+      <div class="card">
+        <div style="font-weight:700; font-size:15px; margin-bottom:10px;">Transaction Ledger (${list.length})</div>
+        <div class="grid-3">
+          <input placeholder="Search description..." value="${this.filter.q}" oninput="App.filter.q=this.value; App.render()" />
+          <select onchange="App.filter.type=this.value; App.render()">
+            <option value="ALL">All Types</option>
+            <option value="expense" ${this.filter.type==='expense'?'selected':''}>Expenses</option>
+            <option value="income" ${this.filter.type==='income'?'selected':''}>Income</option>
+            <option value="refund" ${this.filter.type==='refund'?'selected':''}>Refunds</option>
+            <option value="transfer" ${this.filter.type==='transfer'?'selected':''}>Transfers</option>
+          </select>
+          <select onchange="App.filter.acc=this.value; App.render()">
+            <option value="ALL">All Accounts</option>
+            ${this.state.accounts.map(a => `<option value="${a.id}" ${this.filter.acc===a.id?'selected':''}>${a.name}</option>`).join('')}
+          </select>
         </div>
       </div>
-
-      <!-- Transactions List Container -->
-      <div class="fin-card p-4 sm:p-5" id="tx-list-container">
-        ${this.renderGroupedTransactionList(list)}
-      </div>
-    `;
-    this._activeFilterChips = activeFilterChips;
-  },
-
-  renderTransactionsListOnly() {
-    const container = document.getElementById('tx-list-container');
-    if (!container) return this.render();
-    const f = this.txFilter;
-    const list = this.state.transactions.filter(tx => {
-      if (f.search) {
-        const q = f.search.toLowerCase();
-        const inDesc = (tx.description || '').toLowerCase().includes(q);
-        const inNotes = (tx.notes || '').toLowerCase().includes(q);
-        const inTags = (tx.tags || []).some(t => t.toLowerCase().includes(q));
-        if (!inDesc && !inNotes && !inTags) return false;
-      }
-      if (f.accountId !== 'ALL' && tx.accountId !== f.accountId && tx.toAccountId !== f.accountId) return false;
-      if (f.categoryId !== 'ALL' && tx.categoryId !== f.categoryId) return false;
-      if (f.type !== 'ALL' && tx.type !== f.type) return false;
-      if (f.currency !== 'ALL' && tx.currency !== f.currency) return false;
-      return true;
-    }).sort((a, b) => b.date.localeCompare(a.date));
-    container.innerHTML = this.renderGroupedTransactionList(list);
-  },
-
-  clearSingleFilterChip(idx) {
-    if (this._activeFilterChips && this._activeFilterChips[idx]) {
-      this._activeFilterChips[idx].clear();
-    }
-  },
-
-  resetAllTxFilters() {
-    this.txFilter = { search: '', accountId: 'ALL', categoryId: 'ALL', type: 'ALL', currency: 'ALL', minAmt: '', maxAmt: '', dateFrom: '', dateTo: '', sort: 'date_desc' };
-    this.render();
-  },
-
-  drilldownToTransactions(filters) {
-    this.txFilter = { search: '', accountId: 'ALL', categoryId: 'ALL', type: 'ALL', currency: 'ALL', minAmt: '', maxAmt: '', dateFrom: '', dateTo: '', sort: 'date_desc', ...filters };
-    this.switchTab('transactions');
-  },
-
-  openFilterSheet() {
-    const f = this.txFilter;
-    this.openSheet(`
-      <div class="p-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-base">Filter & Sort Transactions</h3>
-        <button onclick="App.closeSheet()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">${Icon('close', 16)}</button>
-      </div>
-      <div class="p-5 space-y-4 overflow-y-auto text-xs sm:text-sm">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Transaction Type</label>
-            <select id="flt-type" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <option value="ALL" ${f.type === 'ALL' ? 'selected' : ''}>All Types</option>
-              <option value="expense" ${f.type === 'expense' ? 'selected' : ''}>Expenses</option>
-              <option value="income" ${f.type === 'income' ? 'selected' : ''}>Income</option>
-              <option value="transfer" ${f.type === 'transfer' ? 'selected' : ''}>Transfers</option>
-              <option value="refund" ${f.type === 'refund' ? 'selected' : ''}>Refunds</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Sort Order</label>
-            <select id="flt-sort" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <option value="date_desc" ${f.sort === 'date_desc' ? 'selected' : ''}>Newest First</option>
-              <option value="date_asc" ${f.sort === 'date_asc' ? 'selected' : ''}>Oldest First</option>
-              <option value="amt_desc" ${f.sort === 'amt_desc' ? 'selected' : ''}>Highest Amount</option>
-              <option value="amt_asc" ${f.sort === 'amt_asc' ? 'selected' : ''}>Lowest Amount</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Account</label>
-            <select id="flt-acc" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <option value="ALL">All Accounts</option>
-              ${this.state.accounts.map(a => `<option value="${a.id}" ${f.accountId === a.id ? 'selected' : ''}>${a.name} (${a.currency})</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Category</label>
-            <select id="flt-cat" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <option value="ALL">All Categories</option>
-              ${this.state.categories.map(c => `<option value="${c.id}" ${f.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2.5">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Currency</label>
-            <select id="flt-curr" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              <option value="ALL" ${f.currency === 'ALL' ? 'selected' : ''}>All (USD & KHR)</option>
-              <option value="USD" ${f.currency === 'USD' ? 'selected' : ''}>USD Only</option>
-              <option value="KHR" ${f.currency === 'KHR' ? 'selected' : ''}>KHR Only</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Min Amount</label>
-            <input id="flt-min" type="number" step="any" value="${f.minAmt}" placeholder="0" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Max Amount</label>
-            <input id="flt-max" type="number" step="any" value="${f.maxAmt}" placeholder="Any" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">From Date</label>
-            <input id="flt-from" type="date" value="${f.dateFrom}" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">To Date</label>
-            <input id="flt-to" type="date" value="${f.dateTo}" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700" />
-          </div>
-        </div>
-      </div>
-      <div class="p-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
-        <button onclick="App.resetAllTxFilters(); App.closeSheet();" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-semibold text-xs">Reset All</button>
-        <button onclick="App.applyFilterSheet()" class="px-6 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs btn-press">Apply Filters</button>
-      </div>
-    `);
-  },
-
-  applyFilterSheet() {
-    this.txFilter.type = document.getElementById('flt-type').value;
-    this.txFilter.sort = document.getElementById('flt-sort').value;
-    this.txFilter.accountId = document.getElementById('flt-acc').value;
-    this.txFilter.categoryId = document.getElementById('flt-cat').value;
-    this.txFilter.currency = document.getElementById('flt-curr').value;
-    this.txFilter.minAmt = document.getElementById('flt-min').value;
-    this.txFilter.maxAmt = document.getElementById('flt-max').value;
-    this.txFilter.dateFrom = document.getElementById('flt-from').value;
-    this.txFilter.dateTo = document.getElementById('flt-to').value;
-    this.closeSheet();
-    this.render();
-  },
-
-  // ============================================================================
-  // 9. BUDGET PLANNER SCREEN (MONTHLY & ANNUAL COMPARATIVE)
-  // ============================================================================
-  renderBudgetScreen(el) {
-    const month = this.state.settings.selectedMonth;
-    const prevMonth = this.getPreviousMonthStr(month);
-    const curr = this.state.settings.reportCurrency;
-    const b = this.getBudgetForMonth(month, curr);
-
-    if (this.budgetViewMode === 'annual') {
-      return this.renderAnnualBudgetComparison(el, month.slice(0, 4), curr);
-    }
-
-    el.innerHTML = `
-      <!-- Top Mode Switcher & Actions -->
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="inline-flex p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 text-xs font-semibold">
-          <button onclick="App.budgetViewMode='monthly'; App.render()" class="px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 shadow-2xs text-brand-600 dark:text-brand-400">Monthly Planner</button>
-          <button onclick="App.budgetViewMode='annual'; App.render()" class="px-3.5 py-1.5 rounded-lg text-slate-500">Annual Overview</button>
-        </div>
-        <div class="flex items-center gap-2 text-xs">
-          <button onclick="App.copyPrevMonthBudget('${month}')" class="px-3 py-1.5 rounded-xl fin-card font-semibold hover:border-brand-500 btn-press">
-            Copy ${this.formatMonthDisplay(prevMonth)}
-          </button>
-          <button onclick="App.openEditMasterBudgetSheet('${month}')" class="px-3.5 py-1.5 rounded-xl bg-brand-600 text-white font-semibold btn-press">
-            Edit Budget
-          </button>
-        </div>
-      </div>
-
-      <!-- Master Budget Hero Summary -->
-      <div class="fin-card p-5">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-          <div class="md:col-span-2 space-y-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">${this.formatMonthDisplay(month)} Master Plan</span>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold ${b.usagePct > 100 ? 'bg-rose-500/15 text-rose-500' : b.usagePct >= 80 ? 'bg-amber-500/15 text-amber-500' : 'bg-emerald-500/15 text-emerald-500'}">
-                ${b.usagePct.toFixed(1)}% Used
-              </span>
-            </div>
-            <div class="text-2xl sm:text-3xl font-extrabold tabular-nums">
-              ${this.formatMoney(b.actualExpense, curr, true)}
-              <span class="text-sm sm:text-base font-medium text-slate-400"> / ${this.formatMoney(b.overallPlanned, curr, true)}</span>
-            </div>
-            <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div class="h-full rounded-full transition-all duration-300 ${b.usagePct > 100 ? 'bg-rose-500' : b.usagePct >= 80 ? 'bg-amber-500' : 'bg-brand-600'}"
-                   style="width:${Math.min(100, b.usagePct)}%"></div>
-            </div>
-            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-slate-500 dark:text-slate-400">
-              <span>Remaining: <strong class="tabular-nums ${b.remainingBudget >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${this.formatMoney(b.remainingBudget, curr, true)}</strong></span>
-              <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" ${b.raw.rolloverEnabled ? 'checked' : ''} onchange="App.toggleRollover('${month}', this.checked)" class="accent-brand-600 rounded" />
-                <span>Rollover unspent from ${this.formatMonthDisplay(prevMonth)}</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 space-y-2 text-xs">
-            <div class="flex justify-between">
-              <span class="text-slate-400">Total Planned</span>
-              <span class="font-bold tabular-nums">${this.formatMoney(b.overallPlanned, curr, true)}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-400">Actual Eligible Spend</span>
-              <span class="font-bold tabular-nums">${this.formatMoney(b.actualExpense, curr, true)}</span>
-            </div>
-            <div class="flex justify-between pt-1.5 border-t border-slate-200/70 dark:border-slate-700/60">
-              <span class="text-slate-400">Available to Spend</span>
-              <span class="font-bold tabular-nums ${b.remainingBudget >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${this.formatMoney(b.remainingBudget, curr, true)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Category Budget List (Tap any row for Category Spending Bottom Sheet) -->
-      <div class="space-y-2.5">
-        <div class="flex items-center justify-between px-1">
-          <h3 class="font-bold text-sm">Category Budgets</h3>
-          <span class="text-[11px] text-slate-400">Tap any category to inspect transactions or adjust plan</span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          ${b.categoryRows.map(row => {
-            const statusColor = row.pct > 100 ? 'rose' : row.pct >= 80 ? 'amber' : 'emerald';
-            const statusText = row.pct > 100 ? 'Over budget' : row.pct >= 80 ? 'Near limit' : 'On track';
-            return `
-              <div onclick="App.openCategoryDetailSheet('${row.category.id}')" class="fin-card fin-card-interactive p-4 space-y-2.5">
-                <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style="background-color:${row.category.color}18; color:${row.category.color}">
-                      ${Icon(row.category.iconName || 'shoppingBag', 18)}
-                    </div>
-                    <div class="min-w-0">
-                      <div class="font-bold text-xs sm:text-sm truncate">${row.category.name}</div>
-                      <div class="text-[11px] text-slate-400">${statusText} • ${row.pct.toFixed(0)}% used</div>
-                    </div>
-                  </div>
-                  <div class="text-right tabular-nums shrink-0">
-                    <div class="font-bold text-xs sm:text-sm">${this.formatMoney(row.actual, curr, true)}</div>
-                    <div class="text-[11px] text-slate-400">of ${this.formatMoney(row.effectivePlanned, curr, true)}</div>
-                  </div>
-                </div>
-
-                <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div class="h-full rounded-full transition-all duration-300 ${statusColor === 'rose' ? 'bg-rose-500' : statusColor === 'amber' ? 'bg-amber-500' : 'bg-emerald-500'}"
-                       style="width:${Math.min(100, row.pct)}%"></div>
-                </div>
-
-                <div class="flex items-center justify-between text-[11px] text-slate-400 tabular-nums">
-                  <span>${row.rolloverAmt !== 0 ? `Includes ${this.formatMoney(row.rolloverAmt, curr)} rollover` : 'Standard monthly limit'}</span>
-                  <span class="font-semibold ${row.remaining >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">
-                    ${row.remaining >= 0 ? `${this.formatMoney(row.remaining, curr, true)} left` : `${this.formatMoney(Math.abs(row.remaining), curr, true)} over`}
-                  </span>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
+      <div class="card">${this.renderTxRows(list)}</div>
     `;
   },
 
-  renderAnnualBudgetComparison(el, year, curr) {
-    const months = [];
-    let totalPlanned = 0, totalActual = 0, totalIncome = 0;
-    for (let m = 1; m <= 12; m++) {
-      const ym = `${year}-${String(m).padStart(2, '0')}`;
-      const hasActivity = this.state.budgets[ym] || this.state.transactions.some(t => t.date.startsWith(ym));
-      const b = this.getBudgetForMonth(ym, curr);
-      if (hasActivity) {
-        totalPlanned += b.overallPlanned;
-        totalActual += b.actualExpense;
-        totalIncome += b.actualIncome;
-      }
-      months.push({ ym, hasActivity, ...b });
+  renderBudgets(el) {
+    const m = this.state.month;
+    const curr = this.state.currency;
+    if (!this.state.budgets[m]) {
+      this.state.budgets[m] = { overallUSD: 1100, cats: { cat_housing: 350, cat_food: 180, cat_groceries: 150, cat_utilities: 90, cat_transport: 80, cat_shopping: 100 } };
     }
+    const b = this.state.budgets[m];
+    const k = this.getMetrics(m);
 
     el.innerHTML = `
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="inline-flex p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 text-xs font-semibold">
-          <button onclick="App.budgetViewMode='monthly'; App.render()" class="px-3.5 py-1.5 rounded-lg text-slate-500">Monthly Planner</button>
-          <button onclick="App.budgetViewMode='annual'; App.render()" class="px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 shadow-2xs text-brand-600 dark:text-brand-400">Annual Overview (${year})</button>
+      <div class="card">
+        <div style="font-weight:700; font-size:15px;">Monthly Budget Planner (${m})</div>
+        <div class="text-muted" style="margin-bottom:10px;">Changing ${m} budgets never overwrites previous months.</div>
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span>Master Monthly Limit (USD):</span>
+          <input type="number" value="${b.overallUSD}" style="width:110px; font-weight:700;"
+            onchange="App.state.budgets['${m}'].overallUSD=Number(this.value)||0; App.save(); App.render()" />
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">${year} Active Planned Budget</div>
-          <div class="text-xl font-bold tabular-nums mt-1">${this.formatMoney(totalPlanned, curr, true)}</div>
-        </div>
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">${year} Actual Eligible Spending</div>
-          <div class="text-xl font-bold text-rose-500 tabular-nums mt-1">${this.formatMoney(totalActual, curr, true)}</div>
-        </div>
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">${year} Net Budget Variance</div>
-          <div class="text-xl font-bold tabular-nums mt-1 ${totalPlanned - totalActual >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${this.formatMoney(totalPlanned - totalActual, curr, true)}</div>
-        </div>
-      </div>
-
-      <div class="fin-card p-4 sm:p-5 space-y-2.5">
-        <h3 class="font-bold text-sm mb-2">Month-by-Month Comparison (${year})</h3>${months.map(m => `
-          <div onclick="App.state.settings.selectedMonth='${m.ym}'; App.budgetViewMode='monthly'; App.saveState(); App.render();"
-               class="p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 flex items-center justify-between gap-3 cursor-pointer text-xs sm:text-sm transition">
-            <div class="w-24 font-semibold">${this.formatMonthDisplay(m.ym)}</div>
-            <div class="flex-1">
-              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div class="h-full rounded-full ${m.usagePct > 100 ? 'bg-rose-500' : 'bg-brand-600'}" style="width:${m.hasActivity ? Math.min(100, m.usagePct) : 0}%"></div>
-              </div>
-            </div>
-            <div class="text-right tabular-nums w-40">
-              <span class="font-bold">${this.formatMoney(m.actualExpense, curr, true)}</span>
-              <span class="text-slate-400 text-[11px]"> / ${this.formatMoney(m.overallPlanned, curr, true)}</span>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  },
-
-  openCategoryDetailSheet(catId) {
-    const month = this.state.settings.selectedMonth;
-    const curr = this.state.settings.reportCurrency;
-    const b = this.getBudgetForMonth(month, curr);
-    const row = b.categoryRows.find(r => r.category.id === catId);
-    const cat = this.state.categories.find(c => c.id === catId);
-    if (!cat) return;
-
-    const catTxs = this.state.transactions.filter(t => {
-      if (!t.date.startsWith(month) || t.type === 'transfer') return false;
-      if (t.splits && t.splits.some(s => s.categoryId === catId)) return true;
-      return t.categoryId === catId;
-    }).sort((a, b) => b.date.localeCompare(a.date));
-
-    this.openSheet(`
-      <div class="p-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color:${cat.color}20; color:${cat.color}">
-            ${Icon(cat.iconName || 'shoppingBag', 18)}
-          </div>
-          <div>
-            <h3 class="font-bold text-sm sm:text-base">${cat.name}</h3>
-            <span class="text-[11px] text-slate-400">${this.formatMonthDisplay(month)} Activity</span>
-          </div>
-        </div>
-        <button onclick="App.closeSheet()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">${Icon('close', 16)}</button>
-      </div>
-
-      <div class="p-5 space-y-4 overflow-y-auto">
-        ${row ? `
-          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 space-y-3">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400">Spent this month</span>
-              <span class="font-bold text-sm tabular-nums">${this.formatMoney(row.actual, curr)} / ${this.formatMoney(row.effectivePlanned, curr)}</span>
-            </div>
-            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
-              <label class="font-medium">Monthly Category Budget (USD):</label>
-              <div class="flex items-center gap-1.5">
-                <input id="cat-sheet-budget" type="number" step="any" value="${row.baseUSD}"
-                  class="w-24 p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-right font-bold tabular-nums" />
-                <button onclick="App.saveSingleCategoryBudget('${month}', '${cat.id}')" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white font-semibold">Save</button>
-              </div>
-            </div>
-          </div>
-        ` : ''}
-
-        <div>
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Transactions (${catTxs.length})</div>${this.renderGroupedTransactionList(catTxs)}
-        </div>
-      </div>
-    `);
-  },
-
-  saveSingleCategoryBudget(month, catId) {
-    const val = Math.max(0, Number(document.getElementById('cat-sheet-budget').value) || 0);
-    this.getBudgetForMonth(month);
-    this.state.budgets[month].categories[catId] = val;
-    this.saveState();
-    this.closeSheet();
-    this.render();
-    this.toast('Category budget updated', 'success');
-  },
-
-  openEditMasterBudgetSheet(month) {
-    const b = this.getBudgetForMonth(month);
-    this.openSheet(`
-      <div class="p-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-base">Edit ${this.formatMonthDisplay(month)} Plan</h3>
-        <button onclick="App.closeSheet()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">${Icon('close', 16)}</button>
-      </div>
-      <div class="p-5 space-y-3 overflow-y-auto text-xs sm:text-sm">
-        <div class="grid grid-cols-2 gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Master Spending Cap (USD)</label>
-            <input id="mb-overall" type="number" value="${b.raw.overallUSD}" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold tabular-nums border border-slate-300 dark:border-slate-700" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Monthly Savings Target (USD)</label>
-            <input id="mb-savings" type="number" value="${b.raw.savingsTargetUSD || 0}" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold tabular-nums border border-slate-300 dark:border-slate-700" />
-          </div>
-        </div>
-        <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Category Allocations (USD)</div>
-        <div class="space-y-2">
-          ${b.categoryRows.map(r => `
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-medium">${r.category.name}</span>
-              <input type="number" data-cat-budget="${r.category.id}" value="${r.baseUSD}"
-                class="w-24 p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-right font-bold tabular-nums border border-slate-300 dark:border-slate-700" />
-            </div>
-          `).join('')}
-        </div>
-      </div>
-      <div class="p-4 border-t border-slate-200/80 dark:border-slate-800 flex justify-end gap-2">
-        <button onclick="App.closeSheet()" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-semibold text-xs">Cancel</button>
-        <button onclick="App.saveMasterBudgetSheet('${month}')" class="px-5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs btn-press">Save Budget Plan</button>
-      </div>
-    `);
-  },
-
-  saveMasterBudgetSheet(month) {
-    this.getBudgetForMonth(month);
-    this.state.budgets[month].overallUSD = Math.max(0, Number(document.getElementById('mb-overall').value) || 0);
-    this.state.budgets[month].savingsTargetUSD = Math.max(0, Number(document.getElementById('mb-savings').value) || 0);
-    document.querySelectorAll('[data-cat-budget]').forEach(inp => {
-      const cid = inp.getAttribute('data-cat-budget');
-      this.state.budgets[month].categories[cid] = Math.max(0, Number(inp.value) || 0);
-    });
-    this.saveState();
-    this.closeSheet();
-    this.render();
-    this.toast(`Budget plan saved for ${this.formatMonthDisplay(month)}`, 'success');
-  },
-
-  toggleRollover(month, enabled) {
-    this.getBudgetForMonth(month);
-    this.state.budgets[month].rolloverEnabled = !!enabled;
-    this.saveState();
-    this.render();
-    this.toast(`Budget rollover ${enabled ? 'enabled' : 'disabled'}`, 'info');
-  },
-
-  copyPrevMonthBudget(month) {
-    const prev = this.getPreviousMonthStr(month);
-    if (!this.state.budgets[prev]) return this.toast(`No budget configured in ${this.formatMonthDisplay(prev)}`, 'warning');
-    this.state.budgets[month] = JSON.parse(JSON.stringify(this.state.budgets[prev]));
-    this.saveState();
-    this.render();
-    this.toast(`Copied budget plan from ${this.formatMonthDisplay(prev)}`, 'success');
-  },
-
-  // ============================================================================
-  // 10. REPORTS SCREEN (PREMIUM ANALYTICS)
-  // ============================================================================
-  renderReportsScreen(el) {
-    const curr = this.state.settings.reportCurrency;
-    const month = this.state.settings.selectedMonth;
-    const countMap = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 };
-    const numMonths = countMap[this.reportRange] || 6;
-
-    const months = [];
-    let ptr = month;
-    for (let i = 0; i < numMonths; i++) {
-      months.unshift(ptr);
-      ptr = this.getPreviousMonthStr(ptr);
-    }
-
-    let totalInc = 0, totalExp = 0;
-    const catTotals = {};
-    months.forEach(m => {
-      const met = this.getPeriodMetrics(m, curr);
-      totalInc += met.income;
-      totalExp += met.netExpense;
-      Object.entries(met.byCategory).forEach(([cid, val]) => {
-        catTotals[cid] = (catTotals[cid] || 0) + val;
-      });
-    });
-
-    const netSavings = totalInc - totalExp;
-    const savingsRate = totalInc > 0 ? ((netSavings / totalInc) * 100).toFixed(1) : '0.0';
-    const balSummary = this.getConsolidatedBalanceSummary(curr);
-
-    const expCatRows = this.state.categories
-      .filter(c => c.type === 'expense')
-      .map(c => ({ cat: c, amount: Math.max(0, catTotals[c.id] || 0) }))
-      .filter(r => r.amount > 0)
-      .sort((a, b) => b.amount - a.amount);
-
-    el.innerHTML = `
-      <!-- Top Time-Range Selector & Export -->
-      <div class="flex flex-wrap items-center justify-between gap-2 no-print">
-        <div class="inline-flex p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 text-xs font-semibold">
-          ${[
-            ['1m', 'This Month'],
-            ['3m', '3 Months'],
-            ['6m', '6 Months'],
-            ['1y', '12 Months']
-          ].map(([k, label]) => `
-            <button onclick="App.reportRange='${k}'; App.render()"
-              class="px-3 py-1.5 rounded-lg transition ${this.reportRange === k ? 'bg-white dark:bg-slate-900 text-brand-600 dark:text-brand-400 shadow-2xs' : 'text-slate-500'}">${label}</button>
-          `).join('')}
-        </div>
-
-        <div class="flex items-center gap-2 text-xs">
-          <button onclick="App.exportLedgerFile('csv')" class="px-3 py-1.5 rounded-xl fin-card font-semibold flex items-center gap-1.5 btn-press">
-            ${Icon('download', 14)} <span>CSV</span>
-          </button>
-          <button onclick="App.exportLedgerFile('xlsx')" class="px-3 py-1.5 rounded-xl fin-card font-semibold flex items-center gap-1.5 btn-press">
-            ${Icon('download', 14)} <span>Excel</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Executive KPI Strip -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">Period Income</div>
-          <div class="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">${this.formatMoney(totalInc, curr, true)}</div>
-        </div>
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">Net Expenses</div>
-          <div class="text-lg sm:text-xl font-bold text-rose-500 tabular-nums mt-1">${this.formatMoney(totalExp, curr, true)}</div>
-        </div>
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">Net Cash Flow (${savingsRate}%)</div>
-          <div class="text-lg sm:text-xl font-bold tabular-nums mt-1 ${netSavings >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${this.formatMoney(netSavings, curr, true)}</div>
-        </div>
-        <div onclick="App.openSubView('accounts')" class="fin-card fin-card-interactive p-4">
-          <div class="text-xs text-slate-400">Current Net Worth</div>
-          <div class="text-lg sm:text-xl font-bold text-brand-600 dark:text-brand-400 tabular-nums mt-1">${this.formatMoney(balSummary.netWorth, curr, true)}</div>
-        </div>
-      </div>
-
-      <!-- Charts Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="fin-card p-4 sm:p-5">
-          <h3 class="font-bold text-sm mb-1">Income vs. Expenses</h3>
-          <p class="text-[11px] text-slate-400 mb-3">Excludes internal transfers between owned accounts</p>
-          <div class="h-64"><canvas id="rep-inc-exp-chart"></canvas></div>
-        </div>
-
-        <div class="fin-card p-4 sm:p-5">
-          <h3 class="font-bold text-sm mb-1">Monthly Spending Trend & Budget</h3>
-          <p class="text-[11px] text-slate-400 mb-3">Actual spending vs planned monthly cap</p>
-          <div class="h-64"><canvas id="rep-budget-var-chart"></canvas></div>
-        </div>
-      </div>
-
-      <!-- Category Breakdown Table -->
-      <div class="fin-card p-4 sm:p-5">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h3 class="font-bold text-sm">Spending by Category</h3>
-            <p class="text-[11px] text-slate-400">Tap any category to drill down into underlying transactions</p>
-          </div>
-        </div>
-        ${expCatRows.length ? `
-          <div class="space-y-2.5">
-            ${expCatRows.map(r => {
-              const pct = totalExp > 0 ? (r.amount / totalExp) * 100 : 0;
-              return `
-                <div onclick="App.drilldownToTransactions({categoryId:'${r.cat.id}'})" class="p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition space-y-1.5">
-                  <div class="flex items-center justify-between text-xs sm:text-sm">
-                    <div class="flex items-center gap-2.5 font-semibold">
-                      <span class="w-3 h-3 rounded-full" style="background-color:${r.cat.color}"></span>
-                      <span>${r.cat.name}</span>
-                    </div>
-                    <div class="tabular-nums">
-                      <span class="font-bold">${this.formatMoney(r.amount, curr, true)}</span>
-                      <span class="text-xs text-slate-400 ml-1.5">(${pct.toFixed(1)}%)</span>
-                    </div>
-                  </div>
-                  <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full" style="width:${pct}\%; background-color:${r.cat.color}"></div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        ` : `<p class="text-xs text-slate-400 py-8 text-center">No expenses recorded in this date range.</p>`}
-      </div>
-    `;
-
-    this.initReportCharts(months, curr);
-  },
-
-  initReportCharts(months, curr) {
-    if (typeof Chart === 'undefined') return;
-    const isDark = document.documentElement.classList.contains('dark');
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    const gridColor = isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(15, 23, 42, 0.06)';
-
-    const c1 = document.getElementById('rep-inc-exp-chart');
-    if (c1) {
-      this.charts.rep1 = new Chart(c1, {
-        type: 'bar',
-        data: {
-          labels: months.map(m => this.formatMonthDisplay(m)),
-          datasets: [
-            { label: 'Income', data: months.map(m => +this.getPeriodMetrics(m, curr).income.toFixed(2)), backgroundColor: '#10b981', borderRadius: 6 },
-            { label: 'Net Expenses', data: months.map(m => +this.getPeriodMetrics(m, curr).netExpense.toFixed(2)), backgroundColor: '#f43f5e', borderRadius: 6 }
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: { x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } } },
-          plugins: { legend: { labels: { color: textColor, font: { size: 11 } } } }
-        }
-      });
-    }
-
-    const c2 = document.getElementById('rep-budget-var-chart');
-    if (c2) {
-      this.charts.rep2 = new Chart(c2, {
-        type: 'line',
-        data: {
-          labels: months.map(m => this.formatMonthDisplay(m)),
-          datasets: [
-            { label: 'Actual Spend', data: months.map(m => +this.getBudgetForMonth(m, curr).actualExpense.toFixed(2)), borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.12)', fill: true, tension: 0.3 },
-            { label: 'Planned Budget', data: months.map(m => +this.getBudgetForMonth(m, curr).overallPlanned.toFixed(2)), borderColor: '#94a3b8', borderDash: [5, 5], fill: false, tension: 0 }
-          ]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          scales: { x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } }, y: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } } },
-          plugins: { legend: { labels: { color: textColor, font: { size: 11 } } } }
-        }
-      });
-    }
-  },
-
-  // ============================================================================
-  // 11. SUBVIEWS: ACCOUNTS, SAVINGS GOALS, RECURRING CALENDAR, IMPORT WIZARD
-  // ============================================================================
-  renderAccountsView(el) {
-    const curr = this.state.settings.reportCurrency;
-    const summary = this.getConsolidatedBalanceSummary(curr);
-
-    el.innerHTML = `
-      <div class="flex items-center justify-between">
-        <button onclick="App.switchTab('home')" class="text-xs font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-1">
-          ← Back to Home
-        </button>
-        <div class="flex gap-2">
-          <button onclick="App.openTxSheet(null, 'transfer')" class="px-3 py-1.5 rounded-xl fin-card text-xs font-semibold btn-press">⇄ Transfer</button>
-          <button onclick="App.openAccountFormSheet()" class="px-3.5 py-1.5 rounded-xl bg-brand-600 text-white text-xs font-semibold btn-press">+ Add Account</button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">Available Assets</div>
-          <div class="text-xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">${this.formatMoney(summary.availableAssets, curr, true)}</div>
-        </div>
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">Liabilities & Cards</div>
-          <div class="text-xl font-bold text-rose-500 tabular-nums mt-1">${this.formatMoney(summary.liabilities, curr, true)}</div>
-        </div>
-        <div class="fin-card p-4">
-          <div class="text-xs text-slate-400">Total Net Worth</div>
-          <div class="text-xl font-bold tabular-nums mt-1">${this.formatMoney(summary.netWorth, curr, true)}</div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        ${this.state.accounts.map(acc => {
-          const bal = this.getAccountBalance(acc.id);
+      <div class="card">
+        <div style="font-weight:700; font-size:14px; margin-bottom:10px;">Category Budgets (${m})</div>
+        ${CATEGORIES.filter(c => c.type === 'expense').map(cat => {
+          const limitUSD = Number(b.cats[cat.id] || 0);
+          const limitCurr = this.conv(limitUSD, 'USD', curr, this.state.fxRate);
+          const spent = Math.max(0, k.byCat[cat.id] || 0);
+          const pct = limitCurr > 0 ? Math.min(100, (spent / limitCurr) * 100) : 0;
           return `
-            <div onclick="App.openAccountDetailSheet('${acc.id}')" class="fin-card fin-card-interactive p-4 flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="w-11 h-11 rounded-2xl ${acc.isLiability ? 'bg-rose-500/15 text-rose-500' : 'bg-brand-500/15 text-brand-500'} flex items-center justify-center shrink-0">
-                  ${Icon(acc.isLiability ? 'creditCard' : 'landmark', 20)}
-                </div>
-                <div class="min-w-0">
-                  <div class="font-bold text-sm truncate">${acc.name}</div>
-                  <div class="text-[11px] text-slate-400 uppercase">${acc.type} • ${acc.currency}</div>
+            <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:600; font-size:13px;">${cat.icon}${cat.name}</span>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="text-muted">USD</span>
+                  <input type="number" value="${limitUSD}" style="width:85px;"
+                    onchange="App.state.budgets['${m}'].cats['${cat.id}']=Number(this.value)||0; App.save(); App.render()" />
                 </div>
               </div>
-              <div class="text-right tabular-nums shrink-0">
-                <div class="font-extrabold text-sm sm:text-base ${bal < 0 ? 'text-rose-500' : 'text-slate-900 dark:text-white'}">${this.formatMoney(bal, acc.currency, true)}</div>
-                ${acc.currency !== curr ? `<div class="text-[10px] text-slate-400">≈ ${this.formatMoney(this.convertAmount(bal, acc.currency, curr), curr, true)}</div>` : ''}
+              <div class="progress-track">
+                <div class="progress-fill" style="width:${pct}\%; background:${pct > 95 ? 'var(--red)' : pct > 75 ? 'var(--amber)' : 'var(--green)'};"></div>
+              </div>
+              <div class="text-muted" style="display:flex; justify-content:space-between;">
+                <span>Spent: ${this.fmt(spent)} of${this.fmt(limitCurr)}</span>
+                <span>${pct.toFixed(0)}%</span>
               </div>
             </div>
           `;
@@ -2212,223 +562,290 @@ const App = {
     `;
   },
 
-  openAccountDetailSheet(accId) {
-    const acc = this.state.accounts.find(a => a.id === accId);
-    if (!acc) return;
-    const bal = this.getAccountBalance(acc.id);
-    const accTxs = this.state.transactions.filter(t => t.accountId === acc.id || t.toAccountId === acc.id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
-
-    this.openSheet(`
-      <div class="p-5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-        <div>
-          <h3 class="font-bold text-base">${acc.name}</h3>
-          <span class="text-xs text-slate-400 uppercase">${acc.type} •${acc.currency}</span>
-        </div>
-        <button onclick="App.closeSheet()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">${Icon('close', 16)}</button>
-      </div>
-      <div class="p-5 space-y-4 overflow-y-auto">
-        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
-          <div>
-            <div class="text-xs text-slate-400">Current Balance</div>
-            <div class="text-2xl font-extrabold tabular-nums mt-0.5">${this.formatMoney(bal, acc.currency)}</div>
-          </div>
-          <div class="flex gap-2">
-            <button onclick="App.openReconcileSubSheet('${acc.id}')" class="px-3 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold btn-press">Reconcile</button>
-            <button onclick="App.confirmDeleteAccount('${acc.id}')" class="p-2 rounded-xl bg-rose-500/15 text-rose-500 btn-press" title="Delete Account">${Icon('trash', 16)}</button>
-          </div>
-        </div>
-        <div>
-          <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Recent Account Activity</div>
-          ${this.renderGroupedTransactionList(accTxs)}
-        </div>
-      </div>
-    `);
-  },
-
-  openReconcileSubSheet(accId) {
-    const acc = this.state.accounts.find(a => a.id === accId);
-    if (!acc) return;
-    const currentBal = this.getAccountBalance(acc.id);
-    this.openSubSheet(`
-      <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-base">Reconcile ${acc.name}</h3>
-        <button onclick="App.closeSubSheet()" class="p-1 text-slate-400">${Icon('close', 16)}</button>
-      </div>
-      <div class="p-5 space-y-3 text-xs sm:text-sm">
-        <p class="text-slate-400">Recorded balance is <strong class="text-slate-900 dark:text-white tabular-nums">${this.formatMoney(currentBal, acc.currency)}</strong>. Enter your actual statement or wallet balance below:</p>
-        <input id="reconcile-new-bal" type="number" step="any" inputmode="decimal" value="${currentBal}"
-          class="w-full p-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-lg tabular-nums border border-slate-300 dark:border-slate-700" />
-      </div>
-      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
-        <button onclick="App.closeSubSheet()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold">Cancel</button>
-        <button onclick="App.applyReconciliation('${acc.id}')" class="px-5 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold btn-press">Save Adjustment</button>
-      </div>
-    `);
-  },
-
-  applyReconciliation(accId) {
-    const acc = this.state.accounts.find(a => a.id === accId);
-    const currentBal = this.getAccountBalance(accId);
-    const actualBal = Number(document.getElementById('reconcile-new-bal').value);
-    const diff = +(actualBal - currentBal).toFixed(2);
-    if (Math.abs(diff) < 0.001) {
-      this.closeSubSheet();
-      return this.toast('Balance already matches', 'info');
-    }
-    this.state.transactions.push({
-      id: 'tx_rec_' + Date.now(),
-      date: new Date().toISOString().slice(0, 10),
-      type: diff > 0 ? 'income' : 'expense',
-      description: `Balance Reconciliation (${acc.name})`,
-      amount: Math.abs(diff),
-      currency: acc.currency,
-      fxRateUsed: this.state.settings.fxRateKHR,
-      accountId: acc.id,
-      categoryId: 'cat_adjust',
-      paymentMethod: 'Reconciliation',
-      tags: ['reconcile'],
-      notes: `Adjusted from ${currentBal} to${actualBal}`
-    });
-    this.saveState();
-    this.closeSubSheet();
-    this.closeSheet();
-    this.render();
-    this.toast('Account balance reconciled', 'success');
-  },
-
-  confirmDeleteAccount(accId) {
-    if (this.state.accounts.length <= 1) return this.toast('Keep at least one active account', 'warning');
-    const acc = this.state.accounts.find(a => a.id === accId);
-    this.openConfirmDialog({
-      title: `Remove "${acc?.name}"?`,
-      message: 'Removing this account will hide it from your account selector. Existing transactions linked to this account will remain in your history.',
-      confirmLabel: 'Remove Account',
-      danger: true,
-      onConfirm: () => {
-        this.state.accounts = this.state.accounts.filter(a => a.id !== accId);
-        this.saveState();
-        this.closeSubSheet();
-        this.closeSheet();
-        this.render();
-        this.toast('Account removed', 'info');
-      }
-    });
-  },
-
-  openAccountFormSheet() {
-    this.openSheet(`
-      <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-base">New Account</h3>
-        <button onclick="App.closeSheet()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">${Icon('close', 16)}</button>
-      </div>
-      <div class="p-5 space-y-3 text-xs sm:text-sm">
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Account Name</label>
-          <input id="new-acc-name" type="text" placeholder="e.g., ACLEDA Bank, Wing, Cash" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Account Type</label>
-            <select id="new-acc-type" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
-              <option value="bank">Bank Account</option>
-              <option value="ewallet">E-Wallet / KHQR</option>
-              <option value="cash">Cash</option>
-              <option value="savings">Savings Account</option>
-              <option value="credit">Credit Card (Liability)</option>
-              <option value="loan">Loan / Debt (Liability)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Currency</label>
-            <select id="new-acc-curr" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
-              <option value="USD">USD ($)</option>
-              <option value="KHR">KHR (៛)</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Opening Balance</label>
-          <input id="new-acc-open" type="number" step="any" inputmode="decimal" value="0" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold tabular-nums border border-slate-300 dark:border-slate-700" />
-        </div>
-      </div>
-      <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
-        <button onclick="App.closeSheet()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold">Cancel</button>
-        <button onclick="App.saveNewAccountForm()" class="px-5 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold btn-press">Create Account</button>
-      </div>
-    `);
-  },
-
-  saveNewAccountForm() {
-    const name = document.getElementById('new-acc-name').value.trim();
-    const type = document.getElementById('new-acc-type').value;
-    const currency = document.getElementById('new-acc-curr').value;
-    const openingBalance = Number(document.getElementById('new-acc-open').value) || 0;
-    if (!name) return this.toast('Please enter an account name', 'warning');
-    this.state.accounts.push({
-      id: 'acc_' + Date.now(), name, type, currency, openingBalance, isLiability: type === 'credit' || type === 'loan'
-    });
-    this.saveState();
-    this.closeSheet();
-    this.render();
-    this.toast(`Account "${name}" created`, 'success');
-  },
-
-  renderGoalsView(el) {
+  renderAccounts(el) {
+    const k = this.getMetrics();
     el.innerHTML = `
-      <div class="flex items-center justify-between">
-        <button onclick="App.switchTab('home')" class="text-xs font-semibold text-brand-600 dark:text-brand-400">← Back to Home</button>
-        <button onclick="App.openGoalFormSheet()" class="px-3.5 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold btn-press">+ New Savings Goal</button>
+      <div class="grid-3">
+        <div class="card"><div class="kpi-title">TOTAL ASSETS</div><div class="kpi-val text-green">${this.fmt(k.assets)}</div></div>
+        <div class="card"><div class="kpi-title">TOTAL LIABILITIES</div><div class="kpi-val text-red">${this.fmt(k.debt)}</div></div>
+        <div class="card"><div class="kpi-title">NET WORTH</div><div class="kpi-val">${this.fmt(k.netWorth)}</div></div>
       </div>
 
-      ${this.state.goals.length ? `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${this.state.goals.map(g => {
-            const pct = g.targetAmount > 0 ? Math.min(100, (g.currentAmount / g.targetAmount) * 100) : 0;
-            const rem = Math.max(0, g.targetAmount - g.currentAmount);
-            return `
-              <div onclick="App.openGoalDetailSheet('${g.id}')" class="fin-card fin-card-interactive p-5 space-y-3">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-brand-500/15 text-brand-500 flex items-center justify-center shrink-0">
-                      ${Icon('target', 20)}
-                    </div>
-                    <div>
-                      <h3 class="font-bold text-sm sm:text-base">${g.name}</h3>
-                      <span class="text-[11px] text-slate-400">Target Date: ${g.targetDate || 'Flexible'}</span>
-                    </div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-500/15 text-brand-500 tabular-nums">${pct.toFixed(0)}%</span>
-                </div>
-
-                <div class="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div class="h-full bg-brand-600 rounded-full transition-all duration-300" style="width:${pct}%"></div>
-                </div>
-
-                <div class="flex items-center justify-between text-xs tabular-nums">
-                  <span>Saved: <strong class="text-emerald-600 dark:text-emerald-400">${this.formatMoney(g.currentAmount, g.currency, true)}</strong></span>
-                  <span class="text-slate-400">Target: <strong>${this.formatMoney(g.targetAmount, g.currency, true)}</strong> (${this.formatMoney(rem, g.currency, true)} left)</span>
-                </div>
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-weight:700; font-size:15px;">Accounts & Cards</span>
+          <button class="btn-primary" onclick="App.openNewAccountModal()">+ Add Account</button>
+        </div>
+        ${this.state.accounts.map(a => {
+          const bal = this.getAccBalance(a.id);
+          return `
+            <div class="row-item">
+              <div>
+                <div style="font-weight:700;">${a.name}</div>
+                <div class="text-muted">${a.type.toUpperCase()} •${a.currency}</div>
               </div>
-            `;
-          }).join('')}
-        </div>
-      ` : `
-        <div class="fin-card py-12 px-4 text-center">
-          <h3 class="font-bold text-sm">No savings goals yet</h3>
-          <p class="text-xs text-slate-400 mt-1 mb-4">Set up an emergency fund or target purchase to track your progress.</p>
-          <button onclick="App.openGoalFormSheet()" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-xs font-semibold">+ Create First Goal</button>
-        </div>
-      `}
+              <div style="display:flex; align-items:center; gap:8px;">
+                <strong class="${bal < 0 ? 'text-red' : 'text-green'}">${this.fmt(bal, a.currency)}</strong>
+                <button onclick="App.reconcileAccount('${a.id}')">⚖️ Reconcile</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
     `;
   },
 
-  openGoalDetailSheet(goalId) {
-    const g = this.state.goals.find(x => x.id === goalId);
-    if (!g) return;
-    const pct = g.targetAmount > 0 ? Math.min(100, (g.currentAmount / g.targetAmount) * 100) : 0;
-    this.openSheet(`
-      <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-        <h3 class="font-bold text-base">${g.name}</h3>
-        <button onclick="App.closeSheet()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400">${Icon('close', 16)}</button>
+  renderGoals(el) {
+    el.innerHTML = `
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:700; font-size:15px;">Savings & Emergency Goals</div>
+          <div class="text-muted">Track milestones without double-counting expenses</div>
+        </div>
+        <button class="btn-primary" onclick="App.addGoalPrompt()">+ New Goal</button>
       </div>
-      <div class="p-5
+      ${this.state.goals.map(g => {
+        const pct = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : 0;
+        return `
+          <div class="card">
+            <div style="display:flex; justify-content:space-between;">
+              <strong>🎯 ${g.name}</strong>
+              <span class="text-green" style="font-weight:700;">${this.fmt(g.current, 'USD')} /${this.fmt(g.target, 'USD')}</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:var(--primary);"></div></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+              <span class="text-muted">${pct.toFixed(1)}\% complete • Target: ${g.date}</span>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-green" onclick="App.updateGoal('${g.id}', 100)">+$100</button>
+                <button onclick="App.updateGoal('${g.id}', -100)">-$100</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  },
+
+  renderMore(el) {
+    const m = this.state.month;
+    const k = this.getMetrics(m);
+    el.innerHTML = `
+      <!-- Recurring Bills -->
+      <div class="card">
+        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">📅 Scheduled Recurring Bills (${m})</div>
+        ${this.state.recurring.map(r => {
+          const posted = r.lastPosted === m;
+          return `
+            <div class="row-item">
+              <div>
+                <div style="font-weight:600;">${r.desc}</div>
+                <div class="text-muted">Day ${r.day} •${this.fmt(r.amount, r.currency)}</div>
+              </div>
+              ${posted ? '<span class="badge" style="color:var(--green);">Posted ✓</span>' : `<button class="btn-primary" onclick="App.postRecurring('${r.id}')">Post Now</button>`}
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <!-- Smart Insights -->
+      <div class="card">
+        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">💡 Rule-Based Financial Insights</div>
+        <div class="text-muted" style="line-height:1.5;">
+          • <strong>Savings Rate:</strong> ${k.income > 0 ? (((k.income - k.netExp) / k.income) * 100).toFixed(1) : 0}% of income retained in ${m}.<br/>
+          • <strong>Internal Transfers Excluded:</strong> ${this.fmt(k.transfers)} moved between accounts without distorting expenses.<br/>
+          • <strong>Active Exchange Rate:</strong> 1 USD = ${this.state.fxRate.toLocaleString()} KHR.
+        </div>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div class="card">
+        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">💾 Full JSON Backup & Restore</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+          <button class="btn-primary" onclick="App.downloadBackup()">⬇️ Download JSON Backup</button>
+          <button class="btn-red" onclick="if(confirm('Reset to clean demo data?')){localStorage.removeItem('${STORAGE_KEY}');location.reload();}">Reset Demo Data</button>
+        </div>
+        <div class="text-muted" style="margin-bottom:4px;">Restore from JSON Backup file:</div>
+        <input type="file" accept=".json" onchange="App.restoreBackup(event)" />
+      </div>
+    `;
+  },
+
+  openTxModal(defaultType = 'expense') {
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('modal-body').innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">Add Transaction</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="grid-2">
+        <select id="m-type" onchange="document.getElementById('m-to-wrap').style.display=this.value==='transfer'?'block':'none'">
+          <option value="expense" ${defaultType==='expense'?'selected':''}>Expense</option>
+          <option value="income" ${defaultType==='income'?'selected':''}>Income</option>
+          <option value="refund" ${defaultType==='refund'?'selected':''}>Refund (Offsets Expense)</option>
+          <option value="transfer" ${defaultType==='transfer'?'selected':''}>Transfer / Pay Credit Card</option>
+        </select>
+        <input type="date" id="m-date" value="${today}" />
+      </div>
+      <div class="grid-2">
+        <input type="number" step="any" id="m-amt" placeholder="Amount (e.g. 25.00)" />
+        <select id="m-curr">
+          <option value="USD">USD ($)</option>
+          <option value="KHR">KHR (៛)</option>
+        </select>
+      </div>
+      <input type="text" id="m-desc" placeholder="Description (e.g. Coffee, EDC Bill, Salary)" />
+      <div class="grid-2">
+        <div>
+          <div class="text-muted">Account</div>
+          <select id="m-acc" style="width:100%;">
+            ${this.state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div class="text-muted">Category</div>
+          <select id="m-cat" style="width:100%;">
+            ${CATEGORIES.map(c => `<option value="${c.id}">${c.icon}${c.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div id="m-to-wrap" style="display:${defaultType==='transfer'?'block':'none'};">
+        <div class="text-muted">Transfer To Destination Account</div>
+        <select id="m-to-acc" style="width:100%;">
+          ${this.state.accounts.map((a, i) => `<option value="${a.id}" ${i===1?'selected':''}>${a.name}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn-primary" style="padding:12px;" onclick="App.saveTxModal()">Save Transaction</button>
+    `;
+    document.getElementById('modal').classList.add('open');
+  },
+
+  saveTxModal() {
+    const type = document.getElementById('m-type').value;
+    const date = document.getElementById('m-date').value;
+    const amount = Number(document.getElementById('m-amt').value);
+    const currency = document.getElementById('m-curr').value;
+    const desc = document.getElementById('m-desc').value.trim() || 'Transaction';
+    const accountId = document.getElementById('m-acc').value;
+    const categoryId = document.getElementById('m-cat').value;
+    const toAccountId = document.getElementById('m-to-acc').value;
+    if (!amount || amount <= 0) return alert('Please enter a positive amount');
+    this.state.transactions.push({
+      id: 'tx_' + Date.now(), type, date, amount, currency, fx: this.state.fxRate,
+      desc, accountId, toAccountId: type === 'transfer' ? toAccountId : null, categoryId
+    });
+    this.save();
+    this.closeModal();
+    this.render();
+  },
+
+  editTx(id) {
+    const t = this.state.transactions.find(x => x.id === id);
+    if (!t) return;
+    if (confirm(`Delete transaction "${t.desc}" (${this.fmt(t.amount, t.currency)})?`)) {
+      this.state.transactions = this.state.transactions.filter(x => x.id !== id);
+      this.save();
+      this.render();
+    }
+  },
+
+  openFxModal() {
+    const r = prompt('Enter Exchange Rate (1 USD = ? KHR):', this.state.fxRate);
+    const n = Number(r);
+    if (n && n > 100) { this.state.fxRate = n; this.save(); this.render(); }
+  },
+
+  reconcileAccount(accId) {
+    const acc = this.state.accounts.find(a => a.id === accId);
+    const cur = this.getAccBalance(accId);
+    const raw = prompt(`Current balance for ${acc.name} is ${this.fmt(cur, acc.currency)}.\nEnter actual statement balance (${acc.currency}):`, cur);
+    if (raw === null) return;
+    const diff = Number(raw) - cur;
+    if (Math.abs(diff) < 0.01) return;
+    this.state.transactions.push({
+      id: 'tx_' + Date.now(),
+      date: new Date().toISOString().slice(0, 10),
+      type: diff > 0 ? 'income' : 'expense',
+      desc: 'Reconciliation Adjustment (' + acc.name + ')',
+      amount: Math.abs(diff),
+      currency: acc.currency,
+      fx: this.state.fxRate,
+      accountId: acc.id,
+      categoryId: 'cat_adjust'
+    });
+    this.save();
+    this.render();
+  },
+
+  openNewAccountModal() {
+    const name = prompt('New Account Name (e.g. ACLEDA Bank, Wing):');
+    if (!name) return;
+    const curr = confirm('Use USD? (Cancel for KHR)') ? 'USD' : 'KHR';
+    const opening = Number(prompt('Opening Balance:', '0')) || 0;
+    this.state.accounts.push({ id: 'acc_' + Date.now(), name, type: 'bank', currency: curr, opening, isDebt: opening < 0 });
+    this.save();
+    this.render();
+  },
+
+  addGoalPrompt() {
+    const name = prompt('Savings Goal Name:');
+    if (!name) return;
+    const target = Number(prompt('Target Amount (USD):', '1000')) || 1000;
+    this.state.goals.push({ id: 'g_' + Date.now(), name, target, current: 0, monthly: 100, date: '2027-12-31' });
+    this.save();
+    this.render();
+  },
+
+  updateGoal(id, delta) {
+    const g = this.state.goals.find(x => x.id === id);
+    if (g) { g.current = Math.max(0, g.current + delta); this.save(); this.render(); }
+  },
+
+  postRecurring(id) {
+    const r = this.state.recurring.find(x => x.id === id);
+    if (!r) return;
+    const m = this.state.month;
+    this.state.transactions.push({
+      id: 'tx_' + Date.now(),
+      date: `${m}-${String(r.day).padStart(2, '0')}`,
+      type: r.type,
+      desc: r.desc,
+      amount: r.amount,
+      currency: r.currency,
+      fx: this.state.fxRate,
+      accountId: r.accountId,
+      categoryId: r.categoryId
+    });
+    r.lastPosted = m;
+    this.save();
+    this.render();
+  },
+
+  downloadBackup() {
+    const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `MyMoneyPro_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+  },
+
+  restoreBackup(e) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        this.state = JSON.parse(ev.target.result);
+        this.save();
+        this.init();
+      } catch (err) { alert('Invalid backup JSON'); }
+    };
+    reader.readAsText(f);
+  },
+
+  closeModal() { document.getElementById('modal').classList.remove('open'); }
+};
+
+window.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
