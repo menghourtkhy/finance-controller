@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0b0f19" />
-  <title>MyMoney Pro v3.0</title>
+  <title>MyMoney Pro</title>
   <style>
     :root {
       --bg: #0b0f19;
@@ -34,7 +34,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding-bottom: 84px;
+      padding-bottom: 90px;
     }
     header {
       position: sticky; top: 0; z-index: 30;
@@ -51,34 +51,42 @@
       font-weight: 800; font-size: 18px; color: #fff;
     }
     .controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    input, select, button {
+    input, select, textarea, button {
       font-family: inherit; font-size: 13px;
       color: var(--text); background: var(--card-alt);
       border: 1px solid var(--border); border-radius: 10px;
-      padding: 8px 10px; outline: none;
+      padding: 9px 11px; outline: none;
     }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
     button { cursor: pointer; font-weight: 600; }
     .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
     .btn-green { background: var(--green); border-color: var(--green); color: #fff; }
-    .btn-red { background: rgba(244,63,94,0.18); border-color: var(--red); color: var(--red); }
+    .btn-red { background: rgba(244,63,94,0.16); border-color: var(--red); color: var(--red); }
+    .btn-block { width: 100%; padding: 12px; font-size: 14px; }
     .container { max-width: 980px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
     .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
     .card {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 16px; padding: 14px;
     }
-    .kpi-title { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .empty-state {
+      text-align: center; padding: 24px 14px;
+      border: 1px dashed var(--border); border-radius: 14px;
+      background: rgba(99,102,241,0.04);
+    }
+    .kpi-title { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; font-weight: 600; }
     .kpi-val { font-size: 19px; font-weight: 800; }
     .text-green { color: var(--green); }
     .text-red { color: var(--red); }
     .text-amber { color: var(--amber); }
+    .text-cyan { color: var(--cyan); }
     .text-muted { color: var(--muted); font-size: 12px; }
     .progress-track { width: 100%; height: 9px; background: var(--card-alt); border-radius: 99px; overflow: hidden; margin: 8px 0; }
     .progress-fill { height: 100%; border-radius: 99px; transition: width 0.25s; }
     .row-item {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      padding: 10px 0; border-bottom: 1px solid var(--border);
+      padding: 11px 0; border-bottom: 1px solid var(--border);
     }
     .row-item:last-child { border-bottom: none; }
     .badge {
@@ -112,12 +120,16 @@
     .modal-backdrop.open { display: flex; }
     .modal-box {
       background: var(--card); border: 1px solid var(--border);
-      width: 100%; max-width: 560px; max-height: 90vh;
+      width: 100%; max-width: 560px; max-height: 92vh;
       border-radius: 20px 20px 0 0; padding: 16px; overflow-y: auto;
       display: flex; flex-direction: column; gap: 12px;
     }
+    .field-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: block; font-weight: 600; }
     .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-    .chip { white-space: nowrap; font-size: 12px; padding: 6px 10px; border-radius: 99px; background: var(--card-alt); }
+    .chip { white-space: nowrap; font-size: 12px; padding: 6px 11px; border-radius: 99px; background: var(--card-alt); }
+    .type-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: var(--card-alt); padding: 4px; border-radius: 12px; }
+    .type-tab { border: none; padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 700; background: transparent; color: var(--muted); }
+    .type-tab.active { background: var(--primary); color: #fff; }
   </style>
 </head>
 <body>
@@ -127,8 +139,8 @@
     <div class="brand">
       <div class="logo">M</div>
       <div>
-        <div style="font-weight:800; font-size:15px;">MyMoney Pro <span class="badge" style="color:#10b981;">v3.0</span></div>
-        <div class="text-muted" id="header-sub">● Reconciled • Offline Ready</div>
+        <div style="font-weight:800; font-size:15px;">MyMoney Pro</div>
+        <div class="text-muted" id="header-sub">Personal Finance Ledger</div>
       </div>
     </div>
     <div class="controls">
@@ -150,31 +162,37 @@
   <!-- BOTTOM NAVIGATION -->
   <nav class="bottom-nav" id="bottom-nav"></nav>
 
-  <!-- MODAL -->
+  <!-- UNIVERSAL MODAL -->
   <div class="modal-backdrop" id="modal" onclick="if(event.target===this)App.closeModal()">
     <div class="modal-box" id="modal-body"></div>
   </div>
 
 <script>
-// Clear any stuck old service workers immediately
+// Unregister any old service workers and purge old mock storage keys
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
 }
+try {
+  localStorage.removeItem('mymoney_pro_v3_state');
+  localStorage.removeItem('mymoney_pro_state_v2');
+} catch (e) {}
 
-const STORAGE_KEY = 'mymoney_pro_v3_state';
+const STORAGE_KEY = 'mymoney_pro_v4_clean';
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   { id: 'cat_salary', name: 'Salary & Payroll', type: 'income', icon: '💼', color: '#10b981' },
-  { id: 'cat_bonus', name: 'Side Income / Bonus', type: 'income', icon: '🚀', color: '#34d399' },
+  { id: 'cat_business', name: 'Business & Freelance', type: 'income', icon: '🚀', color: '#34d399' },
+  { id: 'cat_other_inc', name: 'Other Income', type: 'income', icon: '💰', color: '#059669' },
   { id: 'cat_food', name: 'Food & Dining', type: 'expense', icon: '🍜', color: '#f59e0b' },
   { id: 'cat_groceries', name: 'Groceries & Market', type: 'expense', icon: '🛒', color: '#84cc16' },
   { id: 'cat_housing', name: 'Rent & Housing', type: 'expense', icon: '🏠', color: '#6366f1' },
-  { id: 'cat_utilities', name: 'EDC, PPWSA & Internet', type: 'expense', icon: '⚡', color: '#06b6d4' },
-  { id: 'cat_transport', name: 'Fuel, Grab & Transport', type: 'expense', icon: '🛵', color: '#ec4899' },
+  { id: 'cat_utilities', name: 'Electricity, Water & Internet', type: 'expense', icon: '⚡', color: '#06b6d4' },
+  { id: 'cat_transport', name: 'Fuel & Transport', type: 'expense', icon: '🛵', color: '#ec4899' },
   { id: 'cat_shopping', name: 'Shopping & Household', type: 'expense', icon: '🛍️', color: '#8b5cf6' },
-  { id: 'cat_health', name: 'Health & Pharmacy', type: 'expense', icon: '🏥', color: '#ef4444' },
-  { id: 'cat_edu', name: 'Courses & Subscriptions', type: 'expense', icon: '🎓', color: '#3b82f6' },
-  { id: 'cat_adjust', name: 'Balance Adjustment', type: 'both', icon: '⚖️', color: '#64748b' }
+  { id: 'cat_health', name: 'Health & Medical', type: 'expense', icon: '🏥', color: '#ef4444' },
+  { id: 'cat_edu', name: 'Education & Subscriptions', type: 'expense', icon: '🎓', color: '#3b82f6' },
+  { id: 'cat_family', name: 'Family & Personal', type: 'expense', icon: '❤️', color: '#f43f5e' },
+  { id: 'cat_adjust', name: 'Reconciliation Adjustment', type: 'both', icon: '⚖️', color: '#64748b' }
 ];
 
 const TABS = [
@@ -183,14 +201,15 @@ const TABS = [
   { id: 'budgets', label: 'Budget', icon: '🎯' },
   { id: 'accounts', label: 'Accounts', icon: '🏦' },
   { id: 'goals', label: 'Goals', icon: '🏆' },
-  { id: 'more', label: 'More', icon: '⚙️' }
+  { id: 'more', label: 'Tools', icon: '⚙️' }
 ];
 
 const App = {
   state: null,
   tab: 'dashboard',
-  filter: { q: '', type: 'ALL', acc: 'ALL' },
+  filter: { q: '', type: 'ALL', acc: 'ALL', cat: 'ALL' },
 
+  // 100% CLEAN STATE — NO MOCK DATA
   defaultState() {
     const m = new Date().toISOString().slice(0, 7);
     return {
@@ -198,42 +217,13 @@ const App = {
       currency: 'USD',
       fxRate: 4050,
       theme: 'dark',
-      accounts: [
-        { id: 'acc_aba', name: 'ABA Bank (USD)', type: 'bank', currency: 'USD', opening: 1850, isDebt: false },
-        { id: 'acc_khr', name: 'Bakong / KHQR (KHR)', type: 'ewallet', currency: 'KHR', opening: 1620000, isDebt: false },
-        { id: 'acc_cash', name: 'Wallet Cash (USD)', type: 'cash', currency: 'USD', opening: 150, isDebt: false },
-        { id: 'acc_save', name: 'Savings Account (USD)', type: 'savings', currency: 'USD', opening: 3200, isDebt: false },
-        { id: 'acc_cc', name: 'Visa Credit Card', type: 'credit', currency: 'USD', opening: -240, isDebt: true }
-      ],
-      transactions: [
-        { id: 't1', date: m + '-01', type: 'income', desc: 'Monthly Salary', amount: 1650, currency: 'USD', fx: 4050, accountId: 'acc_aba', categoryId: 'cat_salary', notes: 'Payroll' },
-        { id: 't2', date: m + '-03', type: 'income', desc: 'Consulting & Automation Project', amount: 250, currency: 'USD', fx: 4050, accountId: 'acc_aba', categoryId: 'cat_bonus', notes: '' },
-        { id: 't3', date: m + '-05', type: 'expense', desc: 'Apartment Rent', amount: 350, currency: 'USD', fx: 4050, accountId: 'acc_aba', categoryId: 'cat_housing', notes: '' },
-        { id: 't4', date: m + '-07', type: 'expense', desc: 'Aeon Supermarket Groceries', amount: 96, currency: 'USD', fx: 4050, accountId: 'acc_cc', categoryId: 'cat_groceries', notes: '' },
-        { id: 't5', date: m + '-09', type: 'expense', desc: 'Lunches & Coffee (KHQR)', amount: 460000, currency: 'KHR', fx: 4050, accountId: 'acc_khr', categoryId: 'cat_food', notes: '' },
-        { id: 't6', date: m + '-11', type: 'expense', desc: 'EDC Electricity & PPWSA Water', amount: 215000, currency: 'KHR', fx: 4050, accountId: 'acc_khr', categoryId: 'cat_utilities', notes: '' },
-        { id: 't7', date: m + '-12', type: 'expense', desc: 'Online Course Bundle', amount: 40, currency: 'USD', fx: 4050, accountId: 'acc_cc', categoryId: 'cat_edu', notes: '' },
-        { id: 't8', date: m + '-13', type: 'refund', desc: 'Course Discount Refund', amount: 10, currency: 'USD', fx: 4050, accountId: 'acc_cc', categoryId: 'cat_edu', notes: 'Offsets education expense' },
-        { id: 't9', date: m + '-14', type: 'transfer', desc: 'Emergency Fund Transfer', amount: 300, currency: 'USD', fx: 4050, accountId: 'acc_aba', toAccountId: 'acc_save', categoryId: 'cat_adjust', notes: 'Internal transfer' },
-        { id: 't10', date: m + '-15', type: 'transfer', desc: 'Credit Card Bill Paydown', amount: 150, currency: 'USD', fx: 4050, accountId: 'acc_aba', toAccountId: 'acc_cc', categoryId: 'cat_adjust', notes: 'Liability payment' }
-      ],
-      budgets: {
-        [m]: {
-          overallUSD: 1100,
-          rollover: false,
-          cats: { cat_housing: 350, cat_food: 180, cat_groceries: 150, cat_utilities: 90, cat_transport: 80, cat_shopping: 100, cat_health: 50, cat_edu: 60 }
-        }
-      },
-      goals: [
-        { id: 'g1', name: '6-Month Emergency Fund', target: 6000, current: 3500, monthly: 300, date: '2027-06-30' },
-        { id: 'g2', name: 'New Workstation Fund', target: 1500, current: 550, monthly: 150, date: '2027-03-31' }
-      ],
-      recurring: [
-        { id: 'r1', desc: 'Monthly Salary', type: 'income', amount: 1650, currency: 'USD', day: 28, accountId: 'acc_aba', categoryId: 'cat_salary', lastPosted: '' },
-        { id: 'r2', desc: 'Apartment Rent', type: 'expense', amount: 350, currency: 'USD', day: 5, accountId: 'acc_aba', categoryId: 'cat_housing', lastPosted: m },
-        { id: 'r3', desc: 'EDC Electricity Bill', type: 'expense', amount: 185000, currency: 'KHR', day: 12, accountId: 'acc_khr', categoryId: 'cat_utilities', lastPosted: '' },
-        { id: 'r4', desc: 'PPWSA Water Bill', type: 'expense', amount: 28000, currency: 'KHR', day: 14, accountId: 'acc_khr', categoryId: 'cat_utilities', lastPosted: '' }
-      ]
+      categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
+      accounts: [],
+      transactions: [],
+      templates: [],
+      budgets: {},
+      goals: [],
+      recurring: []
     };
   },
 
@@ -241,7 +231,12 @@ const App = {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       this.state = raw ? JSON.parse(raw) : this.defaultState();
-      if (!this.state || !Array.isArray(this.state.accounts)) this.state = this.defaultState();
+      if (!this.state || !Array.isArray(this.state.transactions)) {
+        this.state = this.defaultState();
+      }
+      if (!Array.isArray(this.state.categories) || !this.state.categories.length) {
+        this.state.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+      }
     } catch (e) {
       this.state = this.defaultState();
     }
@@ -269,6 +264,10 @@ const App = {
     return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },
 
+  getCat(id) {
+    return this.state.categories.find(c => c.id === id) || { id: 'cat_adjust', name: 'General', icon: '📌', color: '#6366f1' };
+  },
+
   getAccBalance(accId) {
     const acc = this.state.accounts.find(a => a.id === accId);
     if (!acc) return 0;
@@ -291,7 +290,7 @@ const App = {
     const curr = this.state.currency;
     let income = 0, grossExp = 0, refunds = 0, transfers = 0;
     const byCat = {};
-    this.state.transactions.filter(t => t.date.startsWith(month)).forEach(t => {
+    this.state.transactions.filter(t => t.date && t.date.startsWith(month)).forEach(t => {
       const v = this.conv(t.amount, t.currency, curr, t.fx);
       if (t.type === 'transfer') { transfers += v; return; }
       if (t.type === 'income') { income += v; byCat[t.categoryId] = (byCat[t.categoryId] || 0) + v; }
@@ -342,44 +341,58 @@ const App = {
     else this.renderMore(el);
   },
 
+  // ==========================================================================
+  // 1. DASHBOARD VIEW
+  // ==========================================================================
   renderDashboard(el) {
     const m = this.state.month;
     const curr = this.state.currency;
     const k = this.getMetrics(m);
-    const bObj = this.state.budgets[m] || { overallUSD: 1100, cats: {} };
-    const budgetTotal = this.conv(bObj.overallUSD || 1100, 'USD', curr, this.state.fxRate);
+    const bObj = this.state.budgets[m] || { overallUSD: 0, cats: {} };
+    const catSumUSD = Object.values(bObj.cats || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+    const effectiveBudgetUSD = Math.max(Number(bObj.overallUSD) || 0, catSumUSD);
+    const budgetTotal = this.conv(effectiveBudgetUSD, 'USD', curr, this.state.fxRate);
     const budgetPct = budgetTotal > 0 ? Math.min(100, (k.netExp / budgetTotal) * 100) : 0;
 
-    const expCats = CATEGORIES.filter(c => c.type === 'expense')
+    const expCats = this.state.categories.filter(c => c.type === 'expense')
       .map(c => ({ ...c, val: Math.max(0, k.byCat[c.id] || 0) }))
       .filter(c => c.val > 0)
       .sort((a, b) => b.val - a.val);
 
     el.innerHTML = `
-      <!-- Quick Strip -->
+      <!-- Quick Action Chips -->
       <div class="chips">
-        <span class="chip">💱 1 USD = ${this.state.fxRate.toLocaleString()} KHR</span>
-        <button class="chip" onclick="App.openFxModal()">Edit FX Rate</button>
-        <button class="chip" onclick="App.openTxModal('transfer')">⇄ Transfer / Pay Card</button>
-        <button class="chip" onclick="App.switchTab('more')">📅 Bills & Backup</button>
+        <button class="chip" onclick="App.openFxModal()">💱 1 USD = ${this.state.fxRate.toLocaleString()} KHR (Edit)</button>
+        <button class="chip" onclick="App.openAccountModal()">+ Add Account</button>
+        <button class="chip" onclick="App.openTxModal(null, 'expense')">+ Expense</button>
+        <button class="chip" onclick="App.openTxModal(null, 'income')">+ Income</button>
+        <button class="chip" onclick="App.openTxModal(null, 'transfer')">⇄ Transfer</button>
       </div>
+
+      ${this.state.accounts.length === 0 ? `
+      <div class="empty-state">
+        <div style="font-size:28px; margin-bottom:6px;">🏦</div>
+        <div style="font-weight:800; font-size:15px; margin-bottom:4px;">Your Ledger is Clean & Ready</div>
+        <div class="text-muted" style="margin-bottom:12px;">Start by adding your real accounts (ABA, Bakong/KHQR, Cash, Savings, or Credit Card).</div>
+        <button class="btn-primary" onclick="App.openAccountModal()">+ Add Your First Account</button>
+      </div>` : ''}
 
       <!-- 4 KPI Cards -->
       <div class="grid-2">
         <div class="card" onclick="App.switchTab('transactions')">
           <div class="kpi-title"><span>INCOME (${m})</span><span class="text-green">↑ IN</span></div>
           <div class="kpi-val text-green">${this.fmt(k.income)}</div>
-          <div class="text-muted">Excludes transfers</div>
+          <div class="text-muted">Real recorded income</div>
         </div>
         <div class="card" onclick="App.switchTab('transactions')">
           <div class="kpi-title"><span>NET EXPENSES</span><span class="text-red">↓ OUT</span></div>
           <div class="kpi-val text-red">${this.fmt(k.netExp)}</div>
-          <div class="text-muted">${k.refunds > 0 ? 'After ' + this.fmt(k.refunds) + ' refunds' : 'Tap for ledger'}</div>
+          <div class="text-muted">${k.refunds > 0 ? 'After ' + this.fmt(k.refunds) + ' refunds' : 'Excludes transfers'}</div>
         </div>
         <div class="card">
           <div class="kpi-title"><span>NET CASH FLOW</span><span>💧</span></div>
           <div class="kpi-val ${k.netFlow >= 0 ? 'text-green' : 'text-red'}">${k.netFlow >= 0 ? '+' : ''}${this.fmt(k.netFlow)}</div>
-          <div class="text-muted">Income minus net spend</div>
+          <div class="text-muted">Income minus expenses</div>
         </div>
         <div class="card" onclick="App.switchTab('accounts')">
           <div class="kpi-title"><span>NET WORTH</span><span>🏦</span></div>
@@ -388,15 +401,17 @@ const App = {
         </div>
       </div>
 
-      <!-- Master Monthly Budget Bar -->
+      <!-- Monthly Budget Progress -->
       <div class="card" onclick="App.switchTab('budgets')">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-weight:700; font-size:14px;">Monthly Budget Usage (${m})</div>
-            <div class="text-muted">${this.fmt(k.netExp)} spent of ${this.fmt(budgetTotal)} (${budgetPct.toFixed(1)}%)</div>
+            <div style="font-weight:700; font-size:14px;">Monthly Budget (${m})</div>
+            <div class="text-muted">
+              ${budgetTotal > 0 ? `${this.fmt(k.netExp)} spent of ${this.fmt(budgetTotal)} (${budgetPct.toFixed(1)}%)` : 'No budget set for this month yet — tap to configure'}
+            </div>
           </div>
-          <span class="badge" style="color:${budgetPct > 90 ? 'var(--red)' : 'var(--green)'}">
-            ${this.fmt(budgetTotal - k.netExp)} left
+          <span class="badge" style="color:${budgetTotal > 0 ? (budgetPct > 90 ? 'var(--red)' : 'var(--green)') : 'var(--muted)'}">
+            ${budgetTotal > 0 ? this.fmt(budgetTotal - k.netExp) + ' left' : 'Set Budget →'}
           </span>
         </div>
         <div class="progress-track">
@@ -404,9 +419,9 @@ const App = {
         </div>
       </div>
 
-      <!-- Native Category Breakdown Bars -->
+      <!-- Category Breakdown -->
       <div class="card">
-        <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Spending Breakdown (${m})</div>
+        <div style="font-weight:700; font-size:14px; margin-bottom:8px;">Category Spending (${m})</div>
         ${expCats.length ? expCats.map(c => {
           const pct = k.netExp > 0 ? (c.val / k.netExp) * 100 : 0;
           return `
@@ -420,19 +435,19 @@ const App = {
               </div>
             </div>
           `;
-        }).join('') : '<div class="text-muted">No expenses recorded for this month yet. Tap + to add one.</div>'}
+        }).join('') : '<div class="text-muted">No expenses recorded in ' + m + ' yet.</div>'}
       </div>
 
-      <!-- Accounts Overview -->
+      <!-- Accounts List -->
       <div class="card">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <span style="font-weight:700; font-size:14px;">Account Balances</span>
-          <span class="text-muted" onclick="App.switchTab('accounts')">Manage →</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-weight:700; font-size:14px;">Accounts (${this.state.accounts.length})</span>
+          <button onclick="App.openAccountModal()" style="padding:4px 9px; font-size:12px;">+ Add</button>
         </div>
-        ${this.state.accounts.map(a => {
+        ${this.state.accounts.length ? this.state.accounts.map(a => {
           const bal = this.getAccBalance(a.id);
           return `
-            <div class="row-item">
+            <div class="row-item" onclick="App.openAccountModal('${a.id}')">
               <div>
                 <div style="font-weight:600; font-size:13px;">${a.name}</div>
                 <div class="text-muted">${a.type.toUpperCase()} •${a.currency}</div>
@@ -442,58 +457,84 @@ const App = {
               </div>
             </div>
           `;
-        }).join('')}
+        }).join('') : '<div class="text-muted">No accounts added yet.</div>'}
       </div>
 
       <!-- Recent Transactions -->
       <div class="card">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <span style="font-weight:700; font-size:14px;">Recent Transactions</span>
-          <span class="text-muted" onclick="App.switchTab('transactions')">See All →</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-weight:700; font-size:14px;">Recent Transactions (${m})</span>
+          <span class="text-muted" onclick="App.switchTab('transactions')">View All →</span>
         </div>
-        ${this.renderTxRows(this.state.transactions.filter(t => t.date.startsWith(m)).slice().reverse().slice(0, 6))}
+        ${this.renderTxRows(this.state.transactions.filter(t => t.date && t.date.startsWith(m)).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 6))}
       </div>
     `;
   },
 
   renderTxRows(list) {
-    if (!list.length) return '<div class="text-muted" style="padding:12px 0;">No transactions found.</div>';
+    if (!list.length) return '<div class="text-muted" style="padding:10px 0;">No transactions recorded yet. Tap the + button to add one.</div>';
     return list.map(t => {
-      const cat = CATEGORIES.find(c => c.id === t.categoryId) || { icon: '🔄', name: 'Transfer' };
+      const cat = this.getCat(t.categoryId);
       const acc = this.state.accounts.find(a => a.id === t.accountId);
-      const cls = t.type === 'income' || t.type === 'refund' ? 'text-green' : t.type === 'transfer' ? '' : 'text-red';
+      const toAcc = t.toAccountId ? this.state.accounts.find(a => a.id === t.toAccountId) : null;
+      const cls = t.type === 'income' || t.type === 'refund' ? 'text-green' : t.type === 'transfer' ? 'text-cyan' : 'text-red';
       const sign = t.type === 'income' || t.type === 'refund' ? '+' : t.type === 'transfer' ? '⇄ ' : '-';
       return `
-        <div class="row-item" onclick="App.editTx('${t.id}')">
-          <div style="display:flex; align-items:center; gap:10px;">
+        <div class="row-item" onclick="App.openTxModal('${t.id}')">
+          <div style="display:flex; align-items:center; gap:10px; min-width:0;">
             <div style="font-size:20px;">${t.type === 'transfer' ? '🔄' : cat.icon}</div>
-            <div>
-              <div style="font-weight:600; font-size:13px;">${t.desc} ${t.type === 'refund' ? '<span class="badge">Refund</span>' : ''}</div>
-              <div class="text-muted">${t.date} • ${acc ? acc.name : ''} • ${cat.name}</div>
+            <div style="min-width:0;">
+              <div style="font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${t.desc}
+                ${t.type === 'refund' ? '<span class="badge">Refund</span>' : ''}
+              </div>
+              <div class="text-muted">
+                ${t.date} • ${acc ? acc.name : 'Account'}${toAcc ? ' → ' + toAcc.name : ' • ' + cat.name}
+              </div>
             </div>
           </div>
-          <div style="text-align:right;">
+          <div style="text-align:right; flex-shrink:0;">
             <div style="font-weight:700; font-size:13px;" class="${cls}">${sign}${this.fmt(t.amount, t.currency)}</div>
-            <div class="text-muted">Tap to edit</div>
+            <div class="text-muted">Edit ✎</div>
           </div>
         </div>
       `;
     }).join('');
   },
 
+  // ==========================================================================
+  // 2. TRANSACTIONS LEDGER VIEW
+  // ==========================================================================
   renderTransactions(el) {
     const list = this.state.transactions.filter(t => {
-      if (this.filter.q && !t.desc.toLowerCase().includes(this.filter.q.toLowerCase())) return false;
+      if (this.filter.q) {
+        const q = this.filter.q.toLowerCase();
+        const matchDesc = (t.desc || '').toLowerCase().includes(q);
+        const matchNotes = (t.notes || '').toLowerCase().includes(q);
+        if (!matchDesc && !matchNotes) return false;
+      }
       if (this.filter.type !== 'ALL' && t.type !== this.filter.type) return false;
-      if (this.filter.acc !== 'ALL' && t.accountId !== this.filter.acc) return false;
+      if (this.filter.acc !== 'ALL' && t.accountId !== this.filter.acc && t.toAccountId !== this.filter.acc) return false;
+      if (this.filter.cat !== 'ALL' && t.categoryId !== this.filter.cat) return false;
       return true;
     }).slice().sort((a, b) => b.date.localeCompare(a.date));
 
     el.innerHTML = `
+      ${this.state.templates.length ? `
+      <div class="chips">
+        <span class="chip" style="color:var(--muted);">⚡ Quick Templates:</span>
+        ${this.state.templates.map(tpl => `
+          <button class="chip" onclick="App.useTemplate('${tpl.id}')">${tpl.desc} (${this.fmt(tpl.amount, tpl.currency)})</button>
+        `).join('')}
+      </div>` : ''}
+
       <div class="card">
-        <div style="font-weight:700; font-size:15px; margin-bottom:10px;">Transaction Ledger (${list.length})</div>
-        <div class="grid-3">
-          <input placeholder="Search description..." value="${this.filter.q}" oninput="App.filter.q=this.value; App.render()" />
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-weight:700; font-size:15px;">Transactions (${list.length})</span>
+          <button class="btn-primary" onclick="App.openTxModal()">+ Add Transaction</button>
+        </div>
+        <div class="grid-2" style="margin-bottom:8px;">
+          <input placeholder="Search description or note..." value="${this.filter.q}" oninput="App.filter.q=this.value; App.render()" />
           <select onchange="App.filter.type=this.value; App.render()">
             <option value="ALL">All Types</option>
             <option value="expense" ${this.filter.type==='expense'?'selected':''}>Expenses</option>
@@ -501,50 +542,74 @@ const App = {
             <option value="refund" ${this.filter.type==='refund'?'selected':''}>Refunds</option>
             <option value="transfer" ${this.filter.type==='transfer'?'selected':''}>Transfers</option>
           </select>
+        </div>
+        <div class="grid-2">
           <select onchange="App.filter.acc=this.value; App.render()">
             <option value="ALL">All Accounts</option>
             ${this.state.accounts.map(a => `<option value="${a.id}" ${this.filter.acc===a.id?'selected':''}>${a.name}</option>`).join('')}
           </select>
+          <select onchange="App.filter.cat=this.value; App.render()">
+            <option value="ALL">All Categories</option>
+            ${this.state.categories.map(c => `<option value="${c.id}" ${this.filter.cat===c.id?'selected':''}>${c.icon}${c.name}</option>`).join('')}
+          </select>
         </div>
       </div>
+
       <div class="card">${this.renderTxRows(list)}</div>
     `;
   },
 
+  // ==========================================================================
+  // 3. MONTHLY BUDGET PLANNER VIEW
+  // ==========================================================================
   renderBudgets(el) {
     const m = this.state.month;
     const curr = this.state.currency;
     if (!this.state.budgets[m]) {
-      this.state.budgets[m] = { overallUSD: 1100, cats: { cat_housing: 350, cat_food: 180, cat_groceries: 150, cat_utilities: 90, cat_transport: 80, cat_shopping: 100 } };
+      this.state.budgets[m] = { overallUSD: 0, savingsTargetUSD: 0, cats: {} };
     }
     const b = this.state.budgets[m];
     const k = this.getMetrics(m);
 
     el.innerHTML = `
       <div class="card">
-        <div style="font-weight:700; font-size:15px;">Monthly Budget Planner (${m})</div>
-        <div class="text-muted" style="margin-bottom:10px;">Changing ${m} budgets never overwrites previous months.</div>
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-          <span>Master Monthly Limit (USD):</span>
-          <input type="number" value="${b.overallUSD}" style="width:110px; font-weight:700;"
-            onchange="App.state.budgets['${m}'].overallUSD=Number(this.value)||0; App.save(); App.render()" />
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-weight:700; font-size:15px;">Monthly Budget Planner (${m})</span>
+          <button onclick="App.copyPrevMonthBudget('${m}')" style="font-size:11px; padding:5px 9px;">📋 Copy Last Month</button>
+        </div>
+        <div class="text-muted" style="margin-bottom:12px;">Enter your target budgets in USD below. Historical months remain locked.</div>
+
+        <div class="grid-2">
+          <div>
+            <label class="field-label">Master Spending Budget (USD)</label>
+            <input type="number" step="any" value="${b.overallUSD || ''}" placeholder="0.00" style="width:100%; font-weight:700;"
+              onchange="App.state.budgets['${m}'].overallUSD=Number(this.value)||0; App.save(); App.render()" />
+          </div>
+          <div>
+            <label class="field-label">Monthly Savings Target (USD)</label>
+            <input type="number" step="any" value="${b.savingsTargetUSD || ''}" placeholder="0.00" style="width:100%; font-weight:700;"
+              onchange="App.state.budgets['${m}'].savingsTargetUSD=Number(this.value)||0; App.save(); App.render()" />
+          </div>
         </div>
       </div>
 
       <div class="card">
-        <div style="font-weight:700; font-size:14px; margin-bottom:10px;">Category Budgets (${m})</div>
-        ${CATEGORIES.filter(c => c.type === 'expense').map(cat => {
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-weight:700; font-size:14px;">Category Budgets (${m})</span>
+          <button onclick="App.openCategoryModal()" style="font-size:11px; padding:5px 9px;">+ Custom Category</button>
+        </div>
+        ${this.state.categories.filter(c => c.type === 'expense').map(cat => {
           const limitUSD = Number(b.cats[cat.id] || 0);
           const limitCurr = this.conv(limitUSD, 'USD', curr, this.state.fxRate);
           const spent = Math.max(0, k.byCat[cat.id] || 0);
-          const pct = limitCurr > 0 ? Math.min(100, (spent / limitCurr) * 100) : 0;
+          const pct = limitCurr > 0 ? Math.min(100, (spent / limitCurr) * 100) : (spent > 0 ? 100 : 0);
           return `
             <div style="padding:10px 0; border-bottom:1px solid var(--border);">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-weight:600; font-size:13px;">${cat.icon}${cat.name}</span>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <span class="text-muted">USD</span>
-                  <input type="number" value="${limitUSD}" style="width:85px;"
+                  <input type="number" step="any" value="${limitUSD || ''}" placeholder="0" style="width:90px; text-align:right;"
                     onchange="App.state.budgets['${m}'].cats['${cat.id}']=Number(this.value)||0; App.save(); App.render()" />
                 </div>
               </div>
@@ -552,8 +617,8 @@ const App = {
                 <div class="progress-fill" style="width:${pct}\%; background:${pct > 95 ? 'var(--red)' : pct > 75 ? 'var(--amber)' : 'var(--green)'};"></div>
               </div>
               <div class="text-muted" style="display:flex; justify-content:space-between;">
-                <span>Spent: ${this.fmt(spent)} of${this.fmt(limitCurr)}</span>
-                <span>${pct.toFixed(0)}%</span>
+                <span>Actual: ${this.fmt(spent)} / Planned:${this.fmt(limitCurr)}</span>
+                <span>${limitCurr > 0 ? this.fmt(limitCurr - spent) + ' left' : 'No limit set'}</span>
               </div>
             </div>
           `;
@@ -562,6 +627,19 @@ const App = {
     `;
   },
 
+  copyPrevMonthBudget(m) {
+    const [y, mo] = m.split('-').map(Number);
+    const d = new Date(y, mo - 2, 1);
+    const prev = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!this.state.budgets[prev]) return alert('No budget found for ' + prev);
+    this.state.budgets[m] = JSON.parse(JSON.stringify(this.state.budgets[prev]));
+    this.save();
+    this.render();
+  },
+
+  // ==========================================================================
+  // 4. ACCOUNTS & NET WORTH VIEW
+  // ==========================================================================
   renderAccounts(el) {
     const k = this.getMetrics();
     el.innerHTML = `
@@ -573,237 +651,647 @@ const App = {
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <span style="font-weight:700; font-size:15px;">Accounts & Cards</span>
-          <button class="btn-primary" onclick="App.openNewAccountModal()">+ Add Account</button>
+          <span style="font-weight:700; font-size:15px;">Your Accounts (${this.state.accounts.length})</span>
+          <button class="btn-primary" onclick="App.openAccountModal()">+ Add Account</button>
         </div>
-        ${this.state.accounts.map(a => {
+        ${this.state.accounts.length ? this.state.accounts.map(a => {
           const bal = this.getAccBalance(a.id);
           return `
             <div class="row-item">
-              <div>
-                <div style="font-weight:700;">${a.name}</div>
-                <div class="text-muted">${a.type.toUpperCase()} •${a.currency}</div>
+              <div onclick="App.openAccountModal('${a.id}')" style="cursor:pointer;">
+                <div style="font-weight:700;">${a.name} <span class="badge">${a.isDebt ? 'Liability' : a.type}</span></div>
+                <div class="text-muted">Currency: ${a.currency} • Opening: ${this.fmt(a.opening, a.currency)} (Tap to edit)</div>
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <strong class="${bal < 0 ? 'text-red' : 'text-green'}">${this.fmt(bal, a.currency)}</strong>
-                <button onclick="App.reconcileAccount('${a.id}')">⚖️ Reconcile</button>
+                <button onclick="App.openReconcileModal('${a.id}')" title="Reconcile Balance">⚖️</button>
               </div>
             </div>
           `;
-        }).join('')}
+        }).join('') : `
+          <div class="empty-state">
+            <div class="text-muted" style="margin-bottom:10px;">No accounts configured yet. Add your bank, e-wallet, cash, or credit card accounts.</div>
+            <button class="btn-primary" onclick="App.openAccountModal()">+ Create Account</button>
+          </div>
+        `}
       </div>
     `;
   },
 
+  // ==========================================================================
+  // 5. SAVINGS GOALS VIEW
+  // ==========================================================================
   renderGoals(el) {
     el.innerHTML = `
       <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div style="font-weight:700; font-size:15px;">Savings & Emergency Goals</div>
-          <div class="text-muted">Track milestones without double-counting expenses</div>
+          <div style="font-weight:700; font-size:15px;">Savings & Financial Goals</div>
+          <div class="text-muted">Track emergency funds and targets</div>
         </div>
-        <button class="btn-primary" onclick="App.addGoalPrompt()">+ New Goal</button>
+        <button class="btn-primary" onclick="App.openGoalModal()">+ New Goal</button>
       </div>
-      ${this.state.goals.map(g => {
+
+      ${this.state.goals.length ? this.state.goals.map(g => {
         const pct = g.target > 0 ? Math.min(100, (g.current / g.target) * 100) : 0;
         return `
           <div class="card">
-            <div style="display:flex; justify-content:space-between;">
-              <strong>🎯 ${g.name}</strong>
-              <span class="text-green" style="font-weight:700;">${this.fmt(g.current, 'USD')} /${this.fmt(g.target, 'USD')}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div onclick="App.openGoalModal('${g.id}')" style="cursor:pointer;">
+                <strong>🎯 ${g.name}</strong>
+                <div class="text-muted">Target Date: ${g.date || 'Flexible'} (Tap to edit)</div>
+              </div>
+              <span class="text-green" style="font-weight:700;">${this.fmt(g.current, g.currency \vert{}\vert{} 'USD')} /${this.fmt(g.target, g.currency || 'USD')}</span>
             </div>
             <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:var(--primary);"></div></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-              <span class="text-muted">${pct.toFixed(1)}\% complete • Target: ${g.date}</span>
+              <span class="text-muted">${pct.toFixed(1)}% complete</span>
               <div style="display:flex; gap:6px;">
-                <button class="btn-green" onclick="App.updateGoal('${g.id}', 100)">+$100</button>
-                <button onclick="App.updateGoal('${g.id}', -100)">-$100</button>
+                <button class="btn-green" onclick="App.openGoalAdjustModal('${g.id}', 1)">+ Deposit</button>
+                <button onclick="App.openGoalAdjustModal('${g.id}', -1)">- Withdraw</button>
               </div>
             </div>
           </div>
         `;
-      }).join('')}
+      }).join('') : `
+        <div class="empty-state">
+          <div class="text-muted" style="margin-bottom:10px;">No savings goals yet. Tap "+ New Goal" to set up an Emergency Fund or purchase target.</div>
+          <button class="btn-primary" onclick="App.openGoalModal()">+ Create Savings Goal</button>
+        </div>
+      `}
     `;
   },
 
+  // ==========================================================================
+  // 6. TOOLS: RECURRING BILLS, INSIGHTS, CSV EXPORT & JSON BACKUP
+  // ==========================================================================
   renderMore(el) {
     const m = this.state.month;
     const k = this.getMetrics(m);
     el.innerHTML = `
-      <!-- Recurring Bills -->
+      <!-- Recurring Bills & Scheduled Income -->
       <div class="card">
-        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">📅 Scheduled Recurring Bills (${m})</div>
-        ${this.state.recurring.map(r => {
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div>
+            <div style="font-weight:700; font-size:15px;">📅 Recurring Bills & Income (${m})</div>
+            <div class="text-muted">Scheduled monthly items</div>
+          </div>
+          <button class="btn-primary" onclick="App.openRecurringModal()">+ Add Schedule</button>
+        </div>
+        ${this.state.recurring.length ? this.state.recurring.map(r => {
           const posted = r.lastPosted === m;
           return `
             <div class="row-item">
               <div>
-                <div style="font-weight:600;">${r.desc}</div>
-                <div class="text-muted">Day ${r.day} •${this.fmt(r.amount, r.currency)}</div>
+                <div style="font-weight:600;">${r.desc} <span class="badge">${r.type}</span></div>
+                <div class="text-muted">Day ${r.day} of month • ${this.fmt(r.amount, r.currency)}</div>
               </div>
-              ${posted ? '<span class="badge" style="color:var(--green);">Posted ✓</span>' : `<button class="btn-primary" onclick="App.postRecurring('${r.id}')">Post Now</button>`}
+              <div style="display:flex; gap:6px; align-items:center;">
+                ${posted ? '<span class="badge" style="color:var(--green);">Posted ✓</span>' : `<button class="btn-primary" onclick="App.postRecurring('${r.id}')">Post</button>`}
+                <button class="btn-red" onclick="App.deleteRecurring('${r.id}')">✕</button>
+              </div>
             </div>
           `;
-        }).join('')}
+        }).join('') : '<div class="text-muted">No recurring bills or salary schedules added yet.</div>'}
       </div>
 
-      <!-- Smart Insights -->
+      <!-- Intelligent Spending Summary -->
       <div class="card">
-        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">💡 Rule-Based Financial Insights</div>
-        <div class="text-muted" style="line-height:1.5;">
-          • <strong>Savings Rate:</strong> ${k.income > 0 ? (((k.income - k.netExp) / k.income) * 100).toFixed(1) : 0}% of income retained in ${m}.<br/>
-          • <strong>Internal Transfers Excluded:</strong> ${this.fmt(k.transfers)} moved between accounts without distorting expenses.<br/>
-          • <strong>Active Exchange Rate:</strong> 1 USD = ${this.state.fxRate.toLocaleString()} KHR.
+        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">💡 Financial Summary (${m})</div>
+        <div class="text-muted" style="line-height:1.6;">
+          • <strong>Savings Rate:</strong> ${k.income > 0 ? (((k.income - k.netExp) / k.income) * 100).toFixed(1) : '0.0'}% of income retained.<br/>
+          • <strong>Internal Transfers Excluded:</strong> ${this.fmt(k.transfers)} moved between owned accounts without inflating expenses.<br/>
+          • <strong>Refunds Offset:</strong> ${this.fmt(k.refunds)} in refunds deducted directly from gross expenses.<br/>
+          • <strong>Exchange Rate:</strong> 1 USD = ${this.state.fxRate.toLocaleString()} KHR.
         </div>
       </div>
 
-      <!-- Backup & Restore -->
+      <!-- Export, Backup & Clean Reset -->
       <div class="card">
-        <div style="font-weight:700; font-size:15px; margin-bottom:8px;">💾 Full JSON Backup & Restore</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <div style="font-weight:700; font-size:15px; margin-bottom:10px;">💾 Export, Backup & Restore</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
           <button class="btn-primary" onclick="App.downloadBackup()">⬇️ Download JSON Backup</button>
-          <button class="btn-red" onclick="if(confirm('Reset to clean demo data?')){localStorage.removeItem('${STORAGE_KEY}');location.reload();}">Reset Demo Data</button>
+          <button onclick="App.exportCSV()">📊 Export CSV Spreadsheet</button>
+          <button class="btn-red" onclick="App.clearAllData()">🗑️ Wipe All Data</button>
         </div>
-        <div class="text-muted" style="margin-bottom:4px;">Restore from JSON Backup file:</div>
-        <input type="file" accept=".json" onchange="App.restoreBackup(event)" />
+        <div class="field-label">Restore from a saved JSON Backup file:</div>
+        <input type="file" accept=".json" onchange="App.restoreBackup(event)" style="width:100%;" />
       </div>
     `;
   },
 
-  openTxModal(defaultType = 'expense') {
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById('modal-body').innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong style="font-size:16px;">Add Transaction</strong>
-        <button onclick="App.closeModal()">✕</button>
-      </div>
-      <div class="grid-2">
-        <select id="m-type" onchange="document.getElementById('m-to-wrap').style.display=this.value==='transfer'?'block':'none'">
-          <option value="expense" ${defaultType==='expense'?'selected':''}>Expense</option>
-          <option value="income" ${defaultType==='income'?'selected':''}>Income</option>
-          <option value="refund" ${defaultType==='refund'?'selected':''}>Refund (Offsets Expense)</option>
-          <option value="transfer" ${defaultType==='transfer'?'selected':''}>Transfer / Pay Credit Card</option>
-        </select>
-        <input type="date" id="m-date" value="${today}" />
-      </div>
-      <div class="grid-2">
-        <input type="number" step="any" id="m-amt" placeholder="Amount (e.g. 25.00)" />
-        <select id="m-curr">
-          <option value="USD">USD ($)</option>
-          <option value="KHR">KHR (៛)</option>
-        </select>
-      </div>
-      <input type="text" id="m-desc" placeholder="Description (e.g. Coffee, EDC Bill, Salary)" />
-      <div class="grid-2">
-        <div>
-          <div class="text-muted">Account</div>
-          <select id="m-acc" style="width:100%;">
-            ${this.state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <div class="text-muted">Category</div>
-          <select id="m-cat" style="width:100%;">
-            ${CATEGORIES.map(c => `<option value="${c.id}">${c.icon}${c.name}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <div id="m-to-wrap" style="display:${defaultType==='transfer'?'block':'none'};">
-        <div class="text-muted">Transfer To Destination Account</div>
-        <select id="m-to-acc" style="width:100%;">
-          ${this.state.accounts.map((a, i) => `<option value="${a.id}" ${i===1?'selected':''}>${a.name}</option>`).join('')}
-        </select>
-      </div>
-      <button class="btn-primary" style="padding:12px;" onclick="App.saveTxModal()">Save Transaction</button>
-    `;
+  // ==========================================================================
+  // MODALS FOR CLEAN DATA ENTRY (NO BROWSER PROMPTS)
+  // ==========================================================================
+  openModal(html) {
+    document.getElementById('modal-body').innerHTML = html;
     document.getElementById('modal').classList.add('open');
   },
+  closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  },
 
-  saveTxModal() {
-    const type = document.getElementById('m-type').value;
-    const date = document.getElementById('m-date').value;
-    const amount = Number(document.getElementById('m-amt').value);
-    const currency = document.getElementById('m-curr').value;
-    const desc = document.getElementById('m-desc').value.trim() || 'Transaction';
-    const accountId = document.getElementById('m-acc').value;
-    const categoryId = document.getElementById('m-cat').value;
-    const toAccountId = document.getElementById('m-to-acc').value;
-    if (!amount || amount <= 0) return alert('Please enter a positive amount');
+  // Account Modal (Add / Edit / Delete)
+  openAccountModal(accId = null) {
+    const existing = accId ? this.state.accounts.find(a => a.id === accId) : null;
+    const a = existing || { name: '', type: 'bank', currency: 'USD', opening: '' };
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">${existing ? 'Edit Account' : 'Add Account'}</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div>
+        <label class="field-label">Account Name</label>
+        <input id="acc-name" type="text" value="${a.name}" placeholder="e.g., ABA Bank, Bakong KHR, Cash Wallet" style="width:100%;" />
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Account Type</label>
+          <select id="acc-type" style="width:100%;">
+            <option value="bank" ${a.type==='bank'?'selected':''}>Bank Account</option>
+            <option value="ewallet" ${a.type==='ewallet'?'selected':''}>E-Wallet / KHQR</option>
+            <option value="cash" ${a.type==='cash'?'selected':''}>Cash Wallet</option>
+            <option value="savings" ${a.type==='savings'?'selected':''}>Savings Account</option>
+            <option value="credit" ${a.type==='credit'?'selected':''}>Credit Card (Liability)</option>
+            <option value="loan" ${a.type==='loan'?'selected':''}>Loan / Debt (Liability)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Currency</label>
+          <select id="acc-curr" style="width:100%;">
+            <option value="USD" ${a.currency==='USD'?'selected':''}>USD ($)</option>
+            <option value="KHR" ${a.currency==='KHR'?'selected':''}>KHR (៛)</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="field-label">Opening Balance (use negative for initial credit card/loan debt)</label>
+        <input id="acc-open" type="number" step="any" value="${a.opening !== '' ? a.opening : ''}" placeholder="0.00" style="width:100%; font-weight:700;" />
+      </div>
+      <div style="display:flex; gap:8px;">
+        ${existing ? `<button class="btn-red" onclick="App.deleteAccount('${existing.id}')">Delete</button>` : ''}
+        <button class="btn-primary btn-block" onclick="App.saveAccount('${existing ? existing.id : ''}')">Save Account</button>
+      </div>
+    `);
+  },
+
+  saveAccount(id) {
+    const name = document.getElementById('acc-name').value.trim();
+    const type = document.getElementById('acc-type').value;
+    const currency = document.getElementById('acc-curr').value;
+    const opening = Number(document.getElementById('acc-open').value) || 0;
+    if (!name) return alert('Please enter an account name.');
+    const isDebt = type === 'credit' || type === 'loan' || opening < 0;
+    if (id) {
+      const idx = this.state.accounts.findIndex(a => a.id === id);
+      if (idx >= 0) this.state.accounts[idx] = { ...this.state.accounts[idx], name, type, currency, opening, isDebt };
+    } else {
+      this.state.accounts.push({ id: 'acc_' + Date.now(), name, type, currency, opening, isDebt });
+    }
+    this.save();
+    this.closeModal();
+    this.render();
+  },
+
+  deleteAccount(id) {
+    if (!confirm('Delete this account?')) return;
+    this.state.accounts = this.state.accounts.filter(a => a.id !== id);
+    this.save();
+    this.closeModal();
+    this.render();
+  },
+
+  openReconcileModal(accId) {
+    const acc = this.state.accounts.find(a => a.id === accId);
+    if (!acc) return;
+    const cur = this.getAccBalance(accId);
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">Reconcile: ${acc.name}</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="text-muted">Recorded App Balance: <strong>${this.fmt(cur, acc.currency)}</strong></div>
+      <div>
+        <label class="field-label">Actual Real Balance (${acc.currency})</label>
+        <input id="rec-val" type="number" step="any" value="${cur}" style="width:100%; font-weight:700;" />
+      </div>
+      <button class="btn-primary btn-block" onclick="App.applyReconcile('${acc.id}')">Save Reconciliation Adjustment</button>
+    `);
+  },
+
+  applyReconcile(accId) {
+    const acc = this.state.accounts.find(a => a.id === accId);
+    const cur = this.getAccBalance(accId);
+    const actual = Number(document.getElementById('rec-val').value);
+    const diff = +(actual - cur).toFixed(2);
+    if (Math.abs(diff) < 0.001) return this.closeModal();
     this.state.transactions.push({
-      id: 'tx_' + Date.now(), type, date, amount, currency, fx: this.state.fxRate,
-      desc, accountId, toAccountId: type === 'transfer' ? toAccountId : null, categoryId
+      id: 'tx_' + Date.now(),
+      date: new Date().toISOString().slice(0, 10),
+      type: diff > 0 ? 'income' : 'expense',
+      desc: `Balance Reconciliation (${acc.name})`,
+      amount: Math.abs(diff),
+      currency: acc.currency,
+      fx: this.state.fxRate,
+      accountId: acc.id,
+      categoryId: 'cat_adjust',
+      notes: `Reconciled from ${cur} to ${actual}`
     });
     this.save();
     this.closeModal();
     this.render();
   },
 
-  editTx(id) {
-    const t = this.state.transactions.find(x => x.id === id);
-    if (!t) return;
-    if (confirm(`Delete transaction "${t.desc}" (${this.fmt(t.amount, t.currency)})?`)) {
-      this.state.transactions = this.state.transactions.filter(x => x.id !== id);
-      this.save();
-      this.render();
+  // Transaction Modal (Add / Edit / Delete / Save Template)
+  openTxModal(txId = null, defaultType = 'expense') {
+    if (this.state.accounts.length === 0) {
+      return this.openAccountModal();
     }
+    const existing = txId ? this.state.transactions.find(x => x.id === txId) : null;
+    const t = existing || {
+      type: defaultType,
+      date: new Date().toISOString().slice(0, 10),
+      amount: '',
+      currency: this.state.accounts[0]?.currency || 'USD',
+      fx: this.state.fxRate,
+      desc: '',
+      accountId: this.state.accounts[0]?.id || '',
+      toAccountId: this.state.accounts[1]?.id || this.state.accounts[0]?.id || '',
+      categoryId: defaultType === 'income' ? 'cat_salary' : 'cat_food',
+      notes: ''
+    };
+
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">${existing ? 'Edit Transaction' : 'New Transaction'}</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+
+      <div class="type-tabs">
+        ${['expense', 'income', 'refund', 'transfer'].map(tp => `
+          <button type="button" id="ttab-${tp}" class="type-tab ${t.type === tp ? 'active' : ''}" onclick="App.setTxModalType('${tp}')">
+            ${tp.toUpperCase()}
+          </button>
+        `).join('')}
+      </div>
+      <input type="hidden" id="m-type" value="${t.type}" />
+
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Date</label>
+          <input type="date" id="m-date" value="${t.date}" style="width:100%;" />
+        </div>
+        <div>
+          <label class="field-label">Amount</label>
+          <input type="number" step="any" id="m-amt" value="${t.amount}" placeholder="0.00" style="width:100%; font-weight:700;" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Currency</label>
+          <select id="m-curr" style="width:100%;">
+            <option value="USD" ${t.currency==='USD'?'selected':''}>USD ($)</option>
+            <option value="KHR" ${t.currency==='KHR'?'selected':''}>KHR (៛)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Exchange Rate (1 USD = KHR)</label>
+          <input type="number" id="m-fx" value="${t.fx || this.state.fxRate}" style="width:100%;" />
+        </div>
+      </div>
+
+      <div>
+        <label class="field-label">Description</label>
+        <input type="text" id="m-desc" value="${t.desc}" placeholder="e.g., Lunch, Electricity Bill, Monthly Salary" style="width:100%;" />
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Account</label>
+          <select id="m-acc" style="width:100%;">
+            ${this.state.accounts.map(a => `<option value="${a.id}" ${t.accountId===a.id?'selected':''}>${a.name} (${a.currency})</option>`).join('')}
+          </select>
+        </div>
+        <div id="m-cat-wrap" style="display:${t.type==='transfer'?'none':'block'};">
+          <label class="field-label">Category</label>
+          <select id="m-cat" style="width:100%;">
+            ${this.state.categories.map(c => `<option value="${c.id}" ${t.categoryId===c.id?'selected':''}>${c.icon}${c.name}</option>`).join('')}
+          </select>
+        </div>
+        <div id="m-to-wrap" style="display:${t.type==='transfer'?'block':'none'};">
+          <label class="field-label">Destination Account</label>
+          <select id="m-to-acc" style="width:100%;">
+            ${this.state.accounts.map(a => `<option value="${a.id}" ${t.toAccountId===a.id?'selected':''}>${a.name} (${a.currency})</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="field-label">Notes (Optional)</label>
+        <input type="text" id="m-notes" value="${t.notes || ''}" placeholder="Optional details or #tags" style="width:100%;" />
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        ${existing ? `<button class="btn-red" onclick="App.deleteTx('${existing.id}')">Delete</button>` : `<button onclick="App.saveTxTemplate()">⚡ Save Template</button>`}
+        <button class="btn-primary" style="flex:1; padding:12px;" onclick="App.saveTx('${existing ? existing.id : ''}')">Save Transaction</button>
+      </div>
+    `);
   },
 
-  openFxModal() {
-    const r = prompt('Enter Exchange Rate (1 USD = ? KHR):', this.state.fxRate);
-    const n = Number(r);
-    if (n && n > 100) { this.state.fxRate = n; this.save(); this.render(); }
+  setTxModalType(tp) {
+    document.getElementById('m-type').value = tp;
+    ['expense', 'income', 'refund', 'transfer'].forEach(x => {
+      document.getElementById('ttab-' + x).classList.toggle('active', x === tp);
+    });
+    document.getElementById('m-cat-wrap').style.display = tp === 'transfer' ? 'none' : 'block';
+    document.getElementById('m-to-wrap').style.display = tp === 'transfer' ? 'block' : 'none';
   },
 
-  reconcileAccount(accId) {
-    const acc = this.state.accounts.find(a => a.id === accId);
-    const cur = this.getAccBalance(accId);
-    const raw = prompt(`Current balance for ${acc.name} is ${this.fmt(cur, acc.currency)}.\nEnter actual statement balance (${acc.currency}):`, cur);
-    if (raw === null) return;
-    const diff = Number(raw) - cur;
-    if (Math.abs(diff) < 0.01) return;
+  saveTx(existingId) {
+    const type = document.getElementById('m-type').value;
+    const date = document.getElementById('m-date').value;
+    const amount = Number(document.getElementById('m-amt').value);
+    const currency = document.getElementById('m-curr').value;
+    const fx = Number(document.getElementById('m-fx').value) || this.state.fxRate;
+    const desc = document.getElementById('m-desc').value.trim() || 'Transaction';
+    const accountId = document.getElementById('m-acc').value;
+    const categoryId = document.getElementById('m-cat').value;
+    const toAccountId = document.getElementById('m-to-acc').value;
+    const notes = document.getElementById('m-notes').value.trim();
+
+    if (!amount || amount <= 0) return alert('Please enter a valid positive amount.');
+    if (type === 'transfer' && accountId === toAccountId) return alert('Please choose a different destination account for a transfer.');
+
+    const record = {
+      id: existingId || ('tx_' + Date.now()),
+      type, date, amount, currency, fx, desc, accountId,
+      toAccountId: type === 'transfer' ? toAccountId : null,
+      categoryId: type === 'transfer' ? 'cat_adjust' : categoryId,
+      notes
+    };
+
+    if (existingId) {
+      const idx = this.state.transactions.findIndex(x => x.id === existingId);
+      if (idx >= 0) this.state.transactions[idx] = record;
+    } else {
+      this.state.transactions.push(record);
+    }
+
+    this.save();
+    this.closeModal();
+    this.render();
+  },
+
+  deleteTx(id) {
+    if (!confirm('Delete this transaction?')) return;
+    this.state.transactions = this.state.transactions.filter(x => x.id !== id);
+    this.save();
+    this.closeModal();
+    this.render();
+  },
+
+  saveTxTemplate() {
+    const desc = document.getElementById('m-desc').value.trim();
+    const amount = Number(document.getElementById('m-amt').value) || 0;
+    const currency = document.getElementById('m-curr').value;
+    const accountId = document.getElementById('m-acc').value;
+    const categoryId = document.getElementById('m-cat').value;
+    const type = document.getElementById('m-type').value;
+    if (!desc || amount <= 0) return alert('Enter a description and amount first.');
+    this.state.templates.push({ id: 'tpl_' + Date.now(), desc, amount, currency, accountId, categoryId, type });
+    this.save();
+    alert('Saved to Quick Templates!');
+  },
+
+  useTemplate(id) {
+    const tpl = this.state.templates.find(t => t.id === id);
+    if (!tpl) return;
     this.state.transactions.push({
       id: 'tx_' + Date.now(),
       date: new Date().toISOString().slice(0, 10),
-      type: diff > 0 ? 'income' : 'expense',
-      desc: 'Reconciliation Adjustment (' + acc.name + ')',
-      amount: Math.abs(diff),
-      currency: acc.currency,
+      type: tpl.type,
+      desc: tpl.desc,
+      amount: tpl.amount,
+      currency: tpl.currency,
       fx: this.state.fxRate,
-      accountId: acc.id,
-      categoryId: 'cat_adjust'
+      accountId: tpl.accountId,
+      categoryId: tpl.categoryId,
+      notes: 'From template'
     });
     this.save();
     this.render();
   },
 
-  openNewAccountModal() {
-    const name = prompt('New Account Name (e.g. ACLEDA Bank, Wing):');
-    if (!name) return;
-    const curr = confirm('Use USD? (Cancel for KHR)') ? 'USD' : 'KHR';
-    const opening = Number(prompt('Opening Balance:', '0')) || 0;
-    this.state.accounts.push({ id: 'acc_' + Date.now(), name, type: 'bank', currency: curr, opening, isDebt: opening < 0 });
+  // Custom Category Modal
+  openCategoryModal() {
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">New Custom Category</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div>
+        <label class="field-label">Category Name</label>
+        <input id="cat-name" type="text" placeholder="e.g., Pet Care, Coffee, Side Business" style="width:100%;" />
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Type</label>
+          <select id="cat-type" style="width:100%;">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Emoji Icon</label>
+          <input id="cat-icon" type="text" value="🏷️" style="width:100%;" />
+        </div>
+      </div>
+      <button class="btn-primary btn-block" onclick="App.saveCategory()">Add Category</button>
+    `);
+  },
+
+  saveCategory() {
+    const name = document.getElementById('cat-name').value.trim();
+    const type = document.getElementById('cat-type').value;
+    const icon = document.getElementById('cat-icon').value.trim() || '🏷️';
+    if (!name) return alert('Enter a category name.');
+    this.state.categories.push({ id: 'cat_' + Date.now(), name, type, icon, color: '#6366f1' });
     this.save();
+    this.closeModal();
     this.render();
   },
 
-  addGoalPrompt() {
-    const name = prompt('Savings Goal Name:');
-    if (!name) return;
-    const target = Number(prompt('Target Amount (USD):', '1000')) || 1000;
-    this.state.goals.push({ id: 'g_' + Date.now(), name, target, current: 0, monthly: 100, date: '2027-12-31' });
+  // Savings Goal Modals
+  openGoalModal(goalId = null) {
+    const existing = goalId ? this.state.goals.find(g => g.id === goalId) : null;
+    const g = existing || { name: '', target: '', current: 0, currency: 'USD', date: '' };
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">${existing ? 'Edit Savings Goal' : 'New Savings Goal'}</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div>
+        <label class="field-label">Goal Name</label>
+        <input id="g-name" type="text" value="${g.name}" placeholder="e.g., Emergency Fund, New Motorbike, House Deposit" style="width:100%;" />
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Target Amount</label>
+          <input id="g-target" type="number" step="any" value="${g.target}" placeholder="0.00" style="width:100%; font-weight:700;" />
+        </div>
+        <div>
+          <label class="field-label">Current Saved</label>
+          <input id="g-cur" type="number" step="any" value="${g.current}" placeholder="0.00" style="width:100%;" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Currency</label>
+          <select id="g-curr" style="width:100%;">
+            <option value="USD" ${g.currency==='USD'?'selected':''}>USD ($)</option>
+            <option value="KHR" ${g.currency==='KHR'?'selected':''}>KHR (៛)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Target Date</label>
+          <input id="g-date" type="date" value="${g.date || ''}" style="width:100%;" />
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        ${existing ? `<button class="btn-red" onclick="App.deleteGoal('${existing.id}')">Delete</button>` : ''}
+        <button class="btn-primary btn-block" onclick="App.saveGoal('${existing ? existing.id : ''}')">Save Goal</button>
+      </div>
+    `);
+  },
+
+  saveGoal(id) {
+    const name = document.getElementById('g-name').value.trim();
+    const target = Number(document.getElementById('g-target').value) || 0;
+    const current = Number(document.getElementById('g-cur').value) || 0;
+    const currency = document.getElementById('g-curr').value;
+    const date = document.getElementById('g-date').value;
+    if (!name || target <= 0) return alert('Enter a goal name and positive target amount.');
+    if (id) {
+      const idx = this.state.goals.findIndex(g => g.id === id);
+      if (idx >= 0) this.state.goals[idx] = { ...this.state.goals[idx], name, target, current, currency, date };
+    } else {
+      this.state.goals.push({ id: 'g_' + Date.now(), name, target, current, currency, date });
+    }
     this.save();
+    this.closeModal();
     this.render();
   },
 
-  updateGoal(id, delta) {
+  deleteGoal(id) {
+    this.state.goals = this.state.goals.filter(g => g.id !== id);
+    this.save();
+    this.closeModal();
+    this.render();
+  },
+
+  openGoalAdjustModal(id, sign) {
     const g = this.state.goals.find(x => x.id === id);
-    if (g) { g.current = Math.max(0, g.current + delta); this.save(); this.render(); }
+    if (!g) return;
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">${sign > 0 ? 'Deposit to' : 'Withdraw from'} ${g.name}</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div>
+        <label class="field-label">Amount (${g.currency || 'USD'})</label>
+        <input id="ga-amt" type="number" step="any" placeholder="0.00" style="width:100%; font-weight:700;" />
+      </div>
+      <button class="btn-primary btn-block" onclick="App.applyGoalAdjust('${g.id}', ${sign})">Confirm</button>
+    `);
+  },
+
+  applyGoalAdjust(id, sign) {
+    const g = this.state.goals.find(x => x.id === id);
+    const amt = Number(document.getElementById('ga-amt').value) || 0;
+    if (g && amt > 0) {
+      g.current = Math.max(0, g.current + sign * amt);
+      this.save();
+    }
+    this.closeModal();
+    this.render();
+  },
+
+  // Recurring Schedule Modal
+  openRecurringModal() {
+    if (this.state.accounts.length === 0) return this.openAccountModal();
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">Add Recurring Bill or Salary</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div>
+        <label class="field-label">Description</label>
+        <input id="r-desc" type="text" placeholder="e.g., Monthly Rent, EDC Bill, Internet, Salary" style="width:100%;" />
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Type</label>
+          <select id="r-type" style="width:100%;">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Day of Month (1-31)</label>
+          <input id="r-day" type="number" min="1" max="31" value="1" style="width:100%;" />
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Amount</label>
+          <input id="r-amt" type="number" step="any" placeholder="0.00" style="width:100%; font-weight:700;" />
+        </div>
+        <div>
+          <label class="field-label">Currency</label>
+          <select id="r-curr" style="width:100%;">
+            <option value="USD">USD ($)</option>
+            <option value="KHR">KHR (៛)</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label class="field-label">Account</label>
+          <select id="r-acc" style="width:100%;">
+            ${this.state.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Category</label>
+          <select id="r-cat" style="width:100%;">
+            ${this.state.categories.map(c => `<option value="${c.id}">${c.icon}${c.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary btn-block" onclick="App.saveRecurring()">Save Recurring Schedule</button>
+    `);
+  },
+
+  saveRecurring() {
+    const desc = document.getElementById('r-desc').value.trim();
+    const type = document.getElementById('r-type').value;
+    const day = Math.min(31, Math.max(1, Number(document.getElementById('r-day').value) || 1));
+    const amount = Number(document.getElementById('r-amt').value) || 0;
+    const currency = document.getElementById('r-curr').value;
+    const accountId = document.getElementById('r-acc').value;
+    const categoryId = document.getElementById('r-cat').value;
+    if (!desc || amount <= 0) return alert('Enter a valid description and amount.');
+    this.state.recurring.push({ id: 'rec_' + Date.now(), desc, type, day, amount, currency, accountId, categoryId, lastPosted: '' });
+    this.save();
+    this.closeModal();
+    this.render();
   },
 
   postRecurring(id) {
     const r = this.state.recurring.find(x => x.id === id);
     if (!r) return;
     const m = this.state.month;
+    if (r.lastPosted === m) return;
     this.state.transactions.push({
       id: 'tx_' + Date.now(),
       date: `${m}-${String(r.day).padStart(2, '0')}`,
@@ -813,11 +1301,60 @@ const App = {
       currency: r.currency,
       fx: this.state.fxRate,
       accountId: r.accountId,
-      categoryId: r.categoryId
+      categoryId: r.categoryId,
+      notes: 'Scheduled recurring'
     });
     r.lastPosted = m;
     this.save();
     this.render();
+  },
+
+  deleteRecurring(id) {
+    this.state.recurring = this.state.recurring.filter(x => x.id !== id);
+    this.save();
+    this.render();
+  },
+
+  // Exchange Rate Modal
+  openFxModal() {
+    this.openModal(`
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:16px;">Exchange Rate (USD ⇄ KHR)</strong>
+        <button onclick="App.closeModal()">✕</button>
+      </div>
+      <div>
+        <label class="field-label">1 USD equals how many KHR (៛)?</label>
+        <input id="fx-val" type="number" value="${this.state.fxRate}" style="width:100%; font-weight:700;" />
+      </div>
+      <button class="btn-primary btn-block" onclick="App.saveFxModal()">Update Exchange Rate</button>
+    `);
+  },
+
+  saveFxModal() {
+    const v = Number(document.getElementById('fx-val').value);
+    if (v && v > 100) {
+      this.state.fxRate = v;
+      this.save();
+    }
+    this.closeModal();
+    this.render();
+  },
+
+  // Export CSV, JSON Backup & Wipe
+  exportCSV() {
+    if (!this.state.transactions.length) return alert('No transactions to export yet.');
+    const headers = ['Date', 'Type', 'Description', 'Amount', 'Currency', 'FX_Rate', 'Account', 'Category', 'Notes'];
+    const rows = this.state.transactions.map(t => {
+      const acc = this.state.accounts.find(a => a.id === t.accountId)?.name || '';
+      const cat = this.getCat(t.categoryId).name;
+      return [t.date, t.type, `"${(t.desc||'').replace(/"/g,'""')}"`, t.amount, t.currency, t.fx || this.state.fxRate, `"${acc}"`, `"${cat}"`, `"${(t.notes||'').replace(/"/g,'""')}"`].join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `MyMoney_Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
   },
 
   downloadBackup() {
@@ -834,15 +1371,23 @@ const App = {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        this.state = JSON.parse(ev.target.result);
+        const parsed = JSON.parse(ev.target.result);
+        if (!parsed || !Array.isArray(parsed.transactions)) return alert('Invalid backup JSON file.');
+        this.state = parsed;
         this.save();
         this.init();
-      } catch (err) { alert('Invalid backup JSON'); }
+      } catch (err) { alert('Invalid JSON file.'); }
     };
     reader.readAsText(f);
   },
 
-  closeModal() { document.getElementById('modal').classList.remove('open'); }
+  clearAllData() {
+    if (!confirm('Permanently erase all accounts, transactions, budgets, and goals to start fresh?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    this.state = this.defaultState();
+    this.save();
+    this.render();
+  }
 };
 
 window.addEventListener('DOMContentLoaded', () => App.init());
